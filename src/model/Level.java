@@ -1,5 +1,14 @@
 package model;
 
+import java.util.ArrayList;
+
 public interface Level {
 
+    String getPath();
+
+    void build();
+
+    ArrayList<String> getMap();
+
+    ArrayList<Entity> getEntities();
 }
