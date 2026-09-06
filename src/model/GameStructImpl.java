@@ -7,6 +7,7 @@ import java.util.ArrayList;
 
 public class GameStructImpl implements GameStruct{
 
+	//attributi interni
 	private Player player;
 	private LevelBuilder levelBuilder;
 	private EntityPlacer entityPlacer;
@@ -22,7 +23,7 @@ public class GameStructImpl implements GameStruct{
 		this.entityPlacer = new EntityPlacerImpl();
 		this.worlds = new ArrayList<>();
 		this.currentWorldIndex = 0;
-		loadWorlds("");
+		loadWorlds(""); //path del file .txt coi mondi
 	}
 
 	@Override
