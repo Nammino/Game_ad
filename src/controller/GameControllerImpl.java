@@ -30,7 +30,6 @@ public class GameControllerImpl extends KeyAdapter implements GameController {
         if (state == GameState.PLAYING) {
             model.Level currentLevel = model.getCurrentWorld().getLevels().get(panel.getSelectedLevelIndex());
 
-            // SE IL LIVELLO È COMPLETATO: premi INVIO per tornare alla selezione livelli
             if (currentLevel.isCompleted()) {
                 if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE) {
                     panel.resetPlayerPosition();
@@ -46,12 +45,32 @@ public class GameControllerImpl extends KeyAdapter implements GameController {
                     case KeyEvent.VK_A, KeyEvent.VK_LEFT -> player.setLeft(true);
                     case KeyEvent.VK_D, KeyEvent.VK_RIGHT -> player.setRight(true);
                     case KeyEvent.VK_SPACE, KeyEvent.VK_W, KeyEvent.VK_UP -> player.setJumpRequested(true);
+                    
+                    // Apre l'inventario premendo 'I'
+                    case KeyEvent.VK_I -> {
+                        player.setLeft(false);
+                        player.setRight(false);
+                        panel.setCurrentState(GameState.INVENTORY);
+                        panel.repaint();
+                    }
+
                     case KeyEvent.VK_ESCAPE -> {
                         player.setLeft(false);
                         player.setRight(false);
                         panel.setCurrentState(GameState.PAUSE);
                         panel.repaint();
                     }
+                }
+            }
+            return;
+        }
+
+        // Gestisce la chiusura dell'inventario con 'I' o 'ESC'
+        if (state == GameState.INVENTORY) {
+            switch (code) {
+                case KeyEvent.VK_I, KeyEvent.VK_ESCAPE -> {
+                    panel.setCurrentState(GameState.PLAYING);
+                    panel.repaint();
                 }
             }
             return;

@@ -26,8 +26,9 @@ public abstract class Character implements Entity {
         return this.boundingBox;
     }
 
+    // --- MODIFICATO: accetta il Player come l'interfaccia Entity ---
     @Override
-    public abstract void update();
+    public abstract void update(Player player);
 
     public Vector2D getVelocity() {
         return this.velocity;

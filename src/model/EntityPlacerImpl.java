@@ -29,9 +29,11 @@ public class EntityPlacerImpl implements EntityPlacer {
                     double y = row * tileSize;
 
                     switch (tileChar) {
-                        case 'G', 'D' -> entities.add(new Goal(x, y));
-
-                    }
+                    case 'G', 'D' -> entities.add(new Goal(x, y));
+                    case 'E' -> entities.add(new Enemy(x, y));
+                    case 'C' -> entities.add(new Collectible(x, y)); // <-- Collezionabile
+                    case 'N' -> entities.add(new NeutralObject(x, y)); // <-- Neutro/Decorativo
+                }
                 }
                 row++;
             }

@@ -4,10 +4,14 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
+
+import model.Collectible;
+import model.Enemy;
 import model.Entity;
 import model.Goal;
 import model.GameStruct;
 import model.Level;
+import model.NeutralObject;
 import model.Player;
 import model.World;
 
@@ -99,14 +103,53 @@ public class PlayingPanel {
             }
         }
 
-        // --- DISEGNO E GESTIONE DELL'OGGETTO DI VITTORIA (Goal) ---
+     // --- DISEGNO E GESTIONE DELLE ENTITÀ (Neutri, Collezionabili, Goal e Nemici) ---
         if (level.getEntities() != null) {
+            
+            // 1. Prima passata: Disegno gli Oggetti Neutri (Sfondo / Decorativi)
             for (Entity entity : level.getEntities()) {
+                if (entity instanceof NeutralObject neutral) {
+                    int nx = (int) Math.round(neutral.getPosition().getX());
+                    int ny = (int) Math.round(neutral.getPosition().getY());
+
+                    // Disegno l'oggetto neutro di secondo piano (es. Grigio semitrasarente)
+                    g2.setColor(new Color(120, 120, 120, 160));
+                    g2.fillRect(nx, ny, tileSize, tileSize);
+                    g2.setColor(Color.DARK_GRAY);
+                    g2.drawRect(nx, ny, tileSize, tileSize);
+                }
+            }
+
+            // 2. Seconda passata: Gestione e rimozione dei Collezionabili
+            level.getEntities().removeIf(entity -> {
+                if (entity instanceof Collectible col) {
+                    col.update(player); // Aggiorna lo stato di raccolta
+                    
+                    int cx = (int) Math.round(col.getPosition().getX());
+                    int cy = (int) Math.round(col.getPosition().getY());
+
+                    if (!col.isCollected()) {
+                        // Disegna il collezionabile (es. Giallo brillante con una 'C')
+                        g2.setColor(Color.YELLOW);
+                        g2.fillRect(cx, cy, tileSize, tileSize);
+                        g2.setColor(Color.BLACK);
+                        g2.setFont(new Font("Arial", Font.BOLD, 14));
+                        g2.drawString("C", cx + 10, cy + 22);
+                        g2.drawRect(cx, cy, tileSize, tileSize);
+                    }
+                    return col.isCollected(); // Se è raccolto, viene rimosso dalla lista
+                }
+                return false;
+            });
+
+            // 3. Terza passata: Gestione di Goal e Nemici
+            for (Entity entity : level.getEntities()) {
+                
+                // Traguardo (Goal)
                 if (entity instanceof Goal goal) {
                     int gx = (int) Math.round(goal.getPosition().getX());
                     int gy = (int) Math.round(goal.getPosition().getY());
 
-                    // Disegno la porta (Verde con una 'D')
                     g2.setColor(new Color(0, 200, 100));
                     g2.fillRect(gx, gy, tileSize, tileSize);
                     g2.setColor(Color.WHITE);
@@ -115,9 +158,28 @@ public class PlayingPanel {
                     g2.setColor(Color.BLACK);
                     g2.drawRect(gx, gy, tileSize, tileSize);
 
-                    // Se il giocatore tocca il traguardo
                     if (player.getBoundingBox().intersects(goal.getBoundingBox())) {
-                        level.setCompleted(true); // Segna il livello come completato
+                        level.setCompleted(true);
+                    }
+                }
+                
+                // Nemico (Enemy)
+                else if (entity instanceof Enemy enemy) {
+                    int ex = (int) Math.round(enemy.getPosition().getX());
+                    int ey = (int) Math.round(enemy.getPosition().getY());
+
+                    // Disegno il nemico (Viola/Magenta con una 'E')
+                    g2.setColor(new Color(150, 0, 150));
+                    g2.fillRect(ex, ey, tileSize, tileSize);
+                    g2.setColor(Color.WHITE);
+                    g2.setFont(new Font("Arial", Font.BOLD, 18));
+                    g2.drawString("E", ex + 10, ey + 24);
+                    g2.setColor(Color.BLACK);
+                    g2.drawRect(ex, ey, tileSize, tileSize);
+
+                    // Se il giocatore tocca il nemico, gli toglie vita
+                    if (player.getBoundingBox().intersects(enemy.getBoundingBox())) {
+                        player.setHealth(player.getHealth() - 1); 
                     }
                 }
             }

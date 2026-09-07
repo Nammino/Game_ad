@@ -1,7 +1,6 @@
 package view;
 
 import java.awt.Color;
-
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
@@ -16,6 +15,7 @@ import model.GameStruct;
 import model.Level;
 import model.CollisionManager;
 import model.CollisionManagerImpl;
+import model.Entity;
 
 public class GamePanel extends JPanel {
 
@@ -30,6 +30,7 @@ public class GamePanel extends JPanel {
     private final LevelSelectionPanel levelSelectionPanel;
     private final PlayingPanel playingPanel;
     private final PausePanel pausePanel;
+    private final InventoryPanel inventoryPanel; // Dichiarato correttamente
     
     private final CollisionManager collisionManager = new CollisionManagerImpl();
 
@@ -49,12 +50,25 @@ public class GamePanel extends JPanel {
         this.levelSelectionPanel = new LevelSelectionPanel();
         this.playingPanel = new PlayingPanel();
         this.pausePanel = new PausePanel();
+        this.inventoryPanel = new InventoryPanel(); // Inizializzato correttamente
 
         this.gameLoop = new Timer(16, e -> {
             if (currentState == GameState.PLAYING && model != null) {
                 if (model.getCurrentWorld() != null && !model.getCurrentWorld().getLevels().isEmpty()) {
                     Level currentLevel = model.getCurrentWorld().getLevels().get(selectedLevelIndex);
-                    model.getPlayer().update(currentLevel.getMap());
+                    
+                    // SE IL LIVELLO È COMPLETATO, NON AGGIORNARE PIÙ NULLA (BLOCCA TUTTO)
+                    if (!currentLevel.isCompleted()) {
+                        // 1. Aggiorna il giocatore (movimento, gravità)
+                        model.getPlayer().update(currentLevel.getMap());
+                        
+                        // 2. Aggiorna le entità (nemici, oggetti, ecc.)
+                        if (currentLevel.getEntities() != null) {
+                            for (Entity entity : currentLevel.getEntities()) {
+                                entity.update(model.getPlayer());
+                            }
+                        }
+                    }
                 }
                 repaint();
             }
@@ -144,13 +158,14 @@ public class GamePanel extends JPanel {
         switch (currentState) {
             case MENU -> drawMenu(g2);
             case SETTINGS -> settingsPanel.draw(g2, this);
-            case WORLD_SELECTION -> worldSelectionPanel.draw(g2, this, model); // Passa 'model'
+            case WORLD_SELECTION -> worldSelectionPanel.draw(g2, this, model);
             case LEVEL_SELECTION -> levelSelectionPanel.draw(g2, this, model);
             case PLAYING -> playingPanel.draw(g2, this, model);
             case PAUSE -> {
                 playingPanel.draw(g2, this, model);
                 pausePanel.draw(g2, this);
             }
+            case INVENTORY -> inventoryPanel.draw(g2, this, model);
         }
     }
 
@@ -180,7 +195,7 @@ public class GamePanel extends JPanel {
 
         g2.setFont(new Font("Arial", Font.PLAIN, 14));
         g2.setColor(Color.GRAY);
-        String hint = "Usa le FRECCE per spostarti e PREMI ENTER per selezionare";
+        String hint = "Usa le FRECCE per spostarsi e PREMI ENTER per selezionare";
         g2.drawString(hint, (getWidth() - g2.getFontMetrics().stringWidth(hint)) / 2, 530);
     }
 }

@@ -15,6 +15,7 @@ public class Player extends Character {
     private boolean left = false;
     private boolean right = false;
     private boolean jumpRequested = false;
+    private Inventory inventory = new Inventory();
 
     public Player() {
         super();
@@ -113,10 +114,12 @@ public class Player extends Character {
     }
 
     @Override
-    public void update() {
-        update(null);
+    public void update(Player player) {
+        // Il player aggiorna se stesso usando la mappa del livello corrente
+        // (Puoi mantenere qui la logica di update esistente basata sulla mappa, 
+        // oppure puoi recuperare la mappa se ti serve, ma la tua struttura attuale la passa dal GamePanel)
     }
-
+    
     private ArrayList<Rectangle> getSolidTiles(ArrayList<String> map, int tileSize) {
         ArrayList<Rectangle> solidTiles = new ArrayList<>();
         if (map == null || map.isEmpty()) return solidTiles;
@@ -136,5 +139,9 @@ public class Player extends Character {
             }
         }
         return solidTiles;
+    }
+    
+    public Inventory getInventory() {
+        return inventory;
     }
 }

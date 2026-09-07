@@ -25,6 +25,7 @@ public class Goal implements Entity {
     }
 
     @Override
-    public void update() {
+    public void update(Player player) {
+        // I traguardi sono immobili, non fanno nulla
     }
 }

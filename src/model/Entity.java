@@ -3,10 +3,7 @@ package model;
 import java.awt.Rectangle;
 
 public interface Entity {
-	
-	public Vector2D getPosition();
-	
-	public Rectangle getBoundingBox();
-	
-	public void update();
+    Vector2D getPosition();
+    Rectangle getBoundingBox();
+    void update(Player player);
 }
