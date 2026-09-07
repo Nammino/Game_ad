@@ -5,10 +5,14 @@ import java.util.ArrayList;
 
 public class Player extends Character {
 
-    // --- FISICA VELOCIZZATA (Stessa altezza, più reattivo) ---
-    private final double GRAVITY = 0.8;           // Prima era 0.5
-    private final double JUMP_STRENGTH = -13.9;    // Prima era -11.0
+    // --- FISICA VELOCIZZATA ---
+    private final double GRAVITY = 0.8;
+    private final double JUMP_STRENGTH = -13.9;
     private final double MOVE_SPEED = 4.0;
+
+    // --- SISTEMA DI VITA ---
+    private final int maxHealth = 100;
+    private int health = 100;
 
     private boolean left = false;
     private boolean right = false;
@@ -18,6 +22,21 @@ public class Player extends Character {
         super();
         getPosition().setX(50);
         getPosition().setY(100);
+    }
+
+    public int getHealth() { return health; }
+    public int getMaxHealth() { return maxHealth; }
+    
+    public void setHealth(int health) { 
+        this.health = Math.max(0, Math.min(health, maxHealth)); 
+    }
+    
+    public void takeDamage(int amount) {
+        this.health = Math.max(0, this.health - amount);
+    }
+
+    public void resetHealth() {
+        this.health = this.maxHealth;
     }
 
     public void setLeft(boolean left) { this.left = left; }
@@ -93,10 +112,18 @@ public class Player extends Character {
                 getBoundingBox().setBounds((int) Math.round(getPosition().getX()), (int) Math.round(getPosition().getY()), tileSize, tileSize);
             }
         }
+
+        // --- 6. CONTROLLO CADUTA NEL VUOTO ---
+        if (map != null && !map.isEmpty()) {
+            int mapHeightPixels = map.size() * tileSize;
+            if (getPosition().getY() > mapHeightPixels + 100) {
+                takeDamage(maxHealth); // Muore istantaneamente se cade fuori dalla mappa
+            }
+        }
     }
 
     @Override
-    public void update() {
+    public void update() { // Nota: correggere il typo 'piblic' se presente, usa 'public'
         update(null);
     }
 

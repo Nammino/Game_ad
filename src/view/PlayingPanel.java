@@ -12,9 +12,12 @@ import model.World;
 public class PlayingPanel {
 
     public void draw(Graphics2D g2, GamePanel panel, GameStruct model) {
-        // Sfondo del cielo
+        int panelWidth = panel.getWidth();
+        int panelHeight = panel.getHeight();
+
+        // --- SFONDO ADATTATIVO ---
         g2.setColor(new Color(107, 140, 255));
-        g2.fillRect(0, 0, GamePanel.PANEL_WIDTH, GamePanel.PANEL_HEIGHT);
+        g2.fillRect(0, 0, panelWidth, panelHeight);
 
         if (model == null) return;
         World world = model.getCurrentWorld();
@@ -26,12 +29,18 @@ public class PlayingPanel {
 
         if (player == null || map == null || map.isEmpty()) return;
 
+        // --- CONTROLLO MORTE / RESET AUTOMATICO ---
+        if (player.getHealth() <= 0) {
+            panel.resetPlayerPosition();
+            player.resetHealth();
+            return;
+        }
+
         int tileSize = GameStruct.TILE_SIZE;
 
-        // --- CALCOLO POSIZIONE CAMERA (SENZA SCATTI) ---
-        // Usiamo Math.round per evitare micro-scatti dovuti all'arrotondamento dei decimali di Y e X
+        // --- CALCOLO POSIZIONE CAMERA ADATTATIVO ---
         int playerX = (int) Math.round(player.getPosition().getX());
-        int cameraX = playerX - (GamePanel.PANEL_WIDTH / 2) + (tileSize / 2);
+        int cameraX = playerX - (panelWidth / 2) + (tileSize / 2);
         int cameraY = 0; // Camera fissa in verticale per stabilità
 
         // Blocco camera al bordo sinistro
@@ -39,8 +48,8 @@ public class PlayingPanel {
 
         // Blocco camera al bordo destro
         int maxMapWidth = map.get(0).length() * tileSize;
-        if (cameraX > maxMapWidth - GamePanel.PANEL_WIDTH) {
-            cameraX = Math.max(0, maxMapWidth - GamePanel.PANEL_WIDTH);
+        if (cameraX > maxMapWidth - panelWidth) {
+            cameraX = Math.max(0, maxMapWidth - panelWidth);
         }
 
         // --- TRASLAZIONE CAMERA ---
@@ -74,7 +83,7 @@ public class PlayingPanel {
             }
         }
 
-        // Disegno Giocatore (Arrotondato con precisione al pixel)
+        // Disegno Giocatore
         g2.setColor(Color.RED);
         g2.fillRect(
             (int) Math.round(player.getPosition().getX()),
@@ -86,8 +95,28 @@ public class PlayingPanel {
         // --- RIPRISTINO TRASLAZIONE PER L'HUD ---
         g2.translate(cameraX, cameraY);
 
+        // --- HUD / BARRA DELLA VITA E COMANDI ---
         g2.setColor(Color.WHITE);
-        g2.setFont(new Font("Arial", Font.BOLD, 16));
-        g2.drawString("Usa A/D per Muoverti, SPAZIO per Saltare | ESC per Uscire", 20, 30);
+        g2.setFont(new Font("Arial", Font.BOLD, 14));
+        g2.drawString("Usa A/D per Muoverti, SPAZIO per Saltare | ESC per Uscire", 20, 25);
+
+        // Disegno della barra della vita in alto a sinistra
+        int barX = 20;
+        int barY = 35;
+        int barWidth = 180;
+        int barHeight = 18;
+
+        g2.setColor(new Color(50, 50, 50, 200));
+        g2.fillRect(barX, barY, barWidth, barHeight);
+
+        g2.setColor(Color.RED);
+        int currentHealthWidth = (int) (barWidth * ((double) player.getHealth() / player.getMaxHealth()));
+        g2.fillRect(barX, barY, Math.max(0, currentHealthWidth), barHeight);
+
+        g2.setColor(Color.WHITE);
+        g2.drawRect(barX, barY, barWidth, barHeight);
+
+        g2.setFont(new Font("Arial", Font.BOLD, 11));
+        g2.drawString("HP: " + player.getHealth() + " / " + player.getMaxHealth(), barX + 50, barY + 14);
     }
 }

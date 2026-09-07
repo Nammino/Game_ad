@@ -130,6 +130,7 @@ public class GamePanel extends JPanel {
             model.getPlayer().getPosition().setY(100);
             model.getPlayer().getVelocity().setX(0);
             model.getPlayer().getVelocity().setY(0);
+            model.getPlayer().resetHealth();
         }
     }
 
