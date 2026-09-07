@@ -24,14 +24,17 @@ public class LevelImpl implements Level {
 
     @Override
     public void build() {
-
-    	LevelBuilder builder = world.getGameStruct().getBuilder();
+        LevelBuilder builder = world.getGameStruct().getBuilder();
         EntityPlacer placer = world.getGameStruct().getEntityPlacer();
 
-        this.map = builder.build(path);
+        if (builder != null) {
+            this.map = builder.build(path);
+        }
 
-        String entitiesPath = path.replace(".txt", "_entities.txt");
-        this.entities = placer.place(entitiesPath);
+        if (placer != null && path.endsWith(".txt")) {
+            String entitiesPath = path.replace(".txt", "_entities.txt");
+            this.entities = placer.place(entitiesPath);
+        }
     }
 
     @Override

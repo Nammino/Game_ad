@@ -1,59 +1,64 @@
 package model;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
 import java.util.ArrayList;
 
 public class WorldImpl implements World {
 
     private final GameStruct gameStruct;
+    private final int id;
+    private final String name;
     private final ArrayList<Level> levels;
     private int currentLevelIndex;
 
-    public WorldImpl(GameStruct gameStruct, String levelsFilePath) {
+    // Ora levelsData contiene le mappe separate da virgola (es: "map_1_1.txt,map_1_2.txt")
+    public WorldImpl(GameStruct gameStruct, int id, String name, String levelsData) {
         this.gameStruct = gameStruct;
+        this.id = id;
+        this.name = name;
         this.levels = new ArrayList<>();
         this.currentLevelIndex = 0;
         
-        loadLevels(levelsFilePath);
+        loadLevels(levelsData);
     }
 
     @Override
-    public void loadLevels(String path) {
-        levels.clear();
-        if (path == null || path.isEmpty()) {
-            return;
-        }
+    public int getId() {
+        return id;
+    }
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                line = line.trim();
-                if (!line.isEmpty() && !line.startsWith("//")) {
-                    levels.add(new LevelImpl(this, line));
-                }
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public void loadLevels(String levelsData) {
+        levels.clear();
+        if (levelsData == null || levelsData.trim().isEmpty()) return;
+
+        String[] levelFiles = levelsData.split(",");
+        for (String file : levelFiles) {
+            String path = file.trim();
+            if (!path.isEmpty()) {
+                levels.add(new LevelImpl(this, path));
             }
-        } catch (IOException e) {
-            System.err.println("Errore di caricamento dei livelli dal file: " + path);
-            e.printStackTrace();
         }
+    }
+
+    @Override
+    public ArrayList<Level> getLevels() {
+        return levels;
     }
 
     @Override
     public Level getCurrentLevel() {
-        if (levels.isEmpty()) {
-            return null;
-        }
-        return levels.get(currentLevelIndex);
+        return levels.isEmpty() ? null : levels.get(currentLevelIndex);
     }
 
     @Override
     public void changeLevel() {
         if (currentLevelIndex < levels.size() - 1) {
             currentLevelIndex++;
-        } else {
-            System.out.println("Tutti i livelli di questo mondo sono stati completati.");
         }
     }
 

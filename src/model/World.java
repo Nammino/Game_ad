@@ -1,6 +1,12 @@
 package model;
 
+import java.util.ArrayList;
+
 public interface World {
+
+    int getId();
+
+    String getName();
 
     void loadLevels(String path);
 
@@ -9,4 +15,6 @@ public interface World {
     void changeLevel();
 
     GameStruct getGameStruct();
+    
+    ArrayList<Level> getLevels();
 }

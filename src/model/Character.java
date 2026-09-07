@@ -2,36 +2,42 @@ package model;
 
 import java.awt.Rectangle;
 
-public abstract class Character implements Entity{
+public abstract class Character implements Entity {
 
-	private Vector2D position;
-	private Vector2D velocity;
-	private Rectangle BoundingBox;
-	private boolean grounded;
-	
-	@Override
-	public Vector2D getPosition() {
-		return this.position;
-	}
+    private Vector2D position;
+    private Vector2D velocity;
+    private Rectangle boundingBox;
+    private boolean grounded;
 
-	@Override
-	public Rectangle getBoundingBox() {
-		return this.BoundingBox;
-	}
+    public Character() {
+        this.position = new Vector2D(0, 0);
+        this.velocity = new Vector2D(0, 0);
+        this.boundingBox = new Rectangle(0, 0, GameStruct.TILE_SIZE, GameStruct.TILE_SIZE);
+        this.grounded = false;
+    }
 
-	@Override
-	public abstract void update();
+    @Override
+    public Vector2D getPosition() {
+        return this.position;
+    }
 
-	public Vector2D getVelocity() {
-		return this.velocity;
-	}
+    @Override
+    public Rectangle getBoundingBox() {
+        return this.boundingBox;
+    }
 
-	public boolean isGrounded() {
-		return this.grounded;
-	}
+    @Override
+    public abstract void update();
 
-	public void setGrounded(boolean grounded) {
-		this.grounded = grounded;
-		
-	}
+    public Vector2D getVelocity() {
+        return this.velocity;
+    }
+
+    public boolean isGrounded() {
+        return this.grounded;
+    }
+
+    public void setGrounded(boolean grounded) {
+        this.grounded = grounded;
+    }
 }

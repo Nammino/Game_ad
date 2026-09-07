@@ -1,0 +1,3 @@
+1/Regno dei Funghi/map_1_1.txt,map_1_2.txt,map_1_3.txt
+2/Miniere Sotterranee/map_2_1.txt,map_2_2.txt
+3/Castello di Fuoco/map_3_1.txt,map_3_2.txt,map_3_3.txt
