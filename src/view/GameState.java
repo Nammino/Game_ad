@@ -3,8 +3,8 @@ package view;
 public enum GameState {
     MENU,
     WORLD_SELECTION,
-    LEVEL_SELECTION, // <-- Schermata di selezione dei livelli
-    PLAYING,
+    LEVEL_SELECTION,
     SETTINGS,
-    CONTINUE
+    PLAYING,
+    PAUSE 
 }

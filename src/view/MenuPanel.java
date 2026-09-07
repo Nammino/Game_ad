@@ -16,7 +16,7 @@ public class MenuPanel {
     public void draw(Graphics2D g2, GamePanel panel) {
         g2.setFont(new Font("Arial", Font.BOLD, 48));
         g2.setColor(Color.YELLOW);
-        String title = "SUPER MARIO GAME";
+        String title = "HELLO KITTY GAME";
         g2.drawString(title, getCenteredX(g2, title, panel.getWidth()), 150);
 
         g2.setFont(new Font("Arial", Font.BOLD, 28));

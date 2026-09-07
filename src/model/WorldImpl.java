@@ -10,7 +10,6 @@ public class WorldImpl implements World {
     private final ArrayList<Level> levels;
     private int currentLevelIndex;
 
-    // Ora levelsData contiene le mappe separate da virgola (es: "map_1_1.txt,map_1_2.txt")
     public WorldImpl(GameStruct gameStruct, int id, String name, String levelsData) {
         this.gameStruct = gameStruct;
         this.id = id;
