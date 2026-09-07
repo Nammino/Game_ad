@@ -28,13 +28,14 @@ public class PlayingPanel {
 
         int tileSize = GameStruct.TILE_SIZE;
 
-        // --- CALCOLO POSIZIONE CAMERA ---
-        int cameraX = (int) player.getPosition().getX() - (GamePanel.PANEL_WIDTH / 2) + (tileSize / 2);
-        int cameraY = (int) player.getPosition().getY() - (GamePanel.PANEL_HEIGHT / 2) + (tileSize / 2);
+        // --- CALCOLO POSIZIONE CAMERA (SENZA SCATTI) ---
+        // Usiamo Math.round per evitare micro-scatti dovuti all'arrotondamento dei decimali di Y e X
+        int playerX = (int) Math.round(player.getPosition().getX());
+        int cameraX = playerX - (GamePanel.PANEL_WIDTH / 2) + (tileSize / 2);
+        int cameraY = 0; // Camera fissa in verticale per stabilità
 
-        // Blocco camera al bordo sinistro e superiore
+        // Blocco camera al bordo sinistro
         if (cameraX < 0) cameraX = 0;
-        if (cameraY < 0) cameraY = 0;
 
         // Blocco camera al bordo destro
         int maxMapWidth = map.get(0).length() * tileSize;
@@ -73,16 +74,16 @@ public class PlayingPanel {
             }
         }
 
-        // Disegno Giocatore (Rettangolo Rosso)
+        // Disegno Giocatore (Arrotondato con precisione al pixel)
         g2.setColor(Color.RED);
         g2.fillRect(
-            (int) player.getPosition().getX(),
-            (int) player.getPosition().getY(),
+            (int) Math.round(player.getPosition().getX()),
+            (int) Math.round(player.getPosition().getY()),
             tileSize,
             tileSize
         );
 
-        // --- RIPRISTINO TRASLAZIONE PER L'HUD (Interfaccia Fissa) ---
+        // --- RIPRISTINO TRASLAZIONE PER L'HUD ---
         g2.translate(cameraX, cameraY);
 
         g2.setColor(Color.WHITE);

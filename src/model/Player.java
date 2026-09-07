@@ -5,9 +5,14 @@ import java.util.ArrayList;
 
 public class Player extends Character {
 
-    private final double GRAVITY = 0.5;
-    private final double JUMP_STRENGTH = -11.0;
+    // --- FISICA VELOCIZZATA (Stessa altezza, più reattivo) ---
+    private final double GRAVITY = 0.8;           // Prima era 0.5
+    private final double JUMP_STRENGTH = -13.9;    // Prima era -11.0
     private final double MOVE_SPEED = 4.0;
+
+    private boolean left = false;
+    private boolean right = false;
+    private boolean jumpRequested = false;
 
     public Player() {
         super();
@@ -15,62 +20,77 @@ public class Player extends Character {
         getPosition().setY(100);
     }
 
-    public void moveLeft() {
-        getVelocity().setX(-MOVE_SPEED);
-    }
-
-    public void moveRight() {
-        getVelocity().setX(MOVE_SPEED);
-    }
-
-    public void stop() {
-        getVelocity().setX(0);
-    }
-
-    public void jump() {
-        if (isGrounded()) {
-            getVelocity().setY(JUMP_STRENGTH);
-            setGrounded(false);
-        }
-    }
+    public void setLeft(boolean left) { this.left = left; }
+    public void setRight(boolean right) { this.right = right; }
+    public void setJumpRequested(boolean jumpRequested) { this.jumpRequested = jumpRequested; }
 
     public void update(ArrayList<String> map) {
-        // Applica gravità
+        // --- 1. MOVIMENTO ORIZZONTALE ---
+        if (left && !right) {
+            getVelocity().setX(-MOVE_SPEED);
+        } else if (right && !left) {
+            getVelocity().setX(MOVE_SPEED);
+        } else {
+            getVelocity().setX(0);
+        }
+
+        // --- 2. SALTO ---
+        if (jumpRequested && isGrounded()) {
+            getVelocity().setY(JUMP_STRENGTH);
+            setGrounded(false);
+            jumpRequested = false;
+        }
+
+        // --- 3. GRAVITÀ ---
         getVelocity().setY(getVelocity().getY() + GRAVITY);
 
         int tileSize = GameStruct.TILE_SIZE;
 
-        // --- MOVIMENTO ORIZZONTALE (X) ---
+        // --- 4. FISICA X E BORDI MAPPA ---
         getPosition().setX(getPosition().getX() + getVelocity().getX());
-        getBoundingBox().setBounds((int) getPosition().getX(), (int) getPosition().getY(), tileSize, tileSize);
 
-        for (Rectangle tile : getSolidTiles(map, tileSize)) {
-            if (getBoundingBox().intersects(tile)) {
-                if (getVelocity().getX() > 0) { // Spostamento verso destra
-                    getPosition().setX(tile.x - tileSize);
-                } else if (getVelocity().getX() < 0) { // Spostamento verso sinistra
-                    getPosition().setX(tile.x + tile.width);
-                }
-                getBoundingBox().setBounds((int) getPosition().getX(), (int) getPosition().getY(), tileSize, tileSize);
+        // Limite sinistro schermata
+        if (getPosition().getX() < 0) {
+            getPosition().setX(0);
+        } 
+        
+        // Limite destro schermata
+        if (map != null && !map.isEmpty() && map.get(0) != null) {
+            int mapWidthPixels = map.get(0).length() * tileSize;
+            if (getPosition().getX() > mapWidthPixels - tileSize) {
+                getPosition().setX(mapWidthPixels - tileSize);
             }
         }
 
-        // --- MOVIMENTO VERTICALE (Y) ---
+        getBoundingBox().setBounds((int) Math.round(getPosition().getX()), (int) Math.round(getPosition().getY()), tileSize, tileSize);
+
+        for (Rectangle tile : getSolidTiles(map, tileSize)) {
+            if (getBoundingBox().intersects(tile)) {
+                if (getVelocity().getX() > 0) {
+                    getPosition().setX(tile.x - tileSize);
+                } else if (getVelocity().getX() < 0) {
+                    getPosition().setX(tile.x + tile.width);
+                }
+                getBoundingBox().setBounds((int) Math.round(getPosition().getX()), (int) Math.round(getPosition().getY()), tileSize, tileSize);
+            }
+        }
+
+        // --- 5. FISICA Y E COLLISIONI TERRENO ---
         getPosition().setY(getPosition().getY() + getVelocity().getY());
-        getBoundingBox().setBounds((int) getPosition().getX(), (int) getPosition().getY(), tileSize, tileSize);
+        getBoundingBox().setBounds((int) Math.round(getPosition().getX()), (int) Math.round(getPosition().getY()), tileSize, tileSize);
 
         setGrounded(false);
         for (Rectangle tile : getSolidTiles(map, tileSize)) {
             if (getBoundingBox().intersects(tile)) {
-                if (getVelocity().getY() > 0) { // Caduata verso il basso (Aterragio)
+                if (getVelocity().getY() > 0) { // Atterraggio
                     getPosition().setY(tile.y - tileSize);
                     getVelocity().setY(0);
                     setGrounded(true);
-                } else if (getVelocity().getY() < 0) { // Salto verso l'alto (Impatto con blocco sopra)
+                } else if (getVelocity().getY() < 0) { // Soffitto
                     getPosition().setY(tile.y + tile.height);
                     getVelocity().setY(0);
                 }
-                getBoundingBox().setBounds((int) getPosition().getX(), (int) getPosition().getY(), tileSize, tileSize);
+                getBoundingBox().setBounds((int) Math.round(getPosition().getX()), (int) Math.round(getPosition().getY()), tileSize, tileSize);
             }
         }
     }
@@ -80,7 +100,6 @@ public class Player extends Character {
         update(null);
     }
 
-    // Calcola i blocchi solidi attorno al giocatore per ottimizzare le collisioni
     private ArrayList<Rectangle> getSolidTiles(ArrayList<String> map, int tileSize) {
         ArrayList<Rectangle> solidTiles = new ArrayList<>();
         if (map == null || map.isEmpty()) return solidTiles;
