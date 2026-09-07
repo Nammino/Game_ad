@@ -1,6 +1,8 @@
 package model;
 
+import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class WorldImpl implements World {
 
@@ -10,14 +12,14 @@ public class WorldImpl implements World {
     private final ArrayList<Level> levels;
     private int currentLevelIndex;
 
-    public WorldImpl(GameStruct gameStruct, int id, String name, String levelsData) {
+    public WorldImpl(GameStruct gameStruct, int id, String name, String worldFolderPath) {
         this.gameStruct = gameStruct;
         this.id = id;
         this.name = name;
         this.levels = new ArrayList<>();
         this.currentLevelIndex = 0;
         
-        loadLevels(levelsData);
+        loadLevels(worldFolderPath);
     }
 
     @Override
@@ -31,16 +33,25 @@ public class WorldImpl implements World {
     }
 
     @Override
-    public void loadLevels(String levelsData) {
+    public void loadLevels(String worldFolderPath) {
         levels.clear();
-        if (levelsData == null || levelsData.trim().isEmpty()) return;
+        if (worldFolderPath == null || worldFolderPath.trim().isEmpty()) return;
 
-        String[] levelFiles = levelsData.split(",");
-        for (String file : levelFiles) {
-            String path = file.trim();
-            if (!path.isEmpty()) {
-                levels.add(new LevelImpl(this, path));
+        File folder = new File(worldFolderPath);
+        if (folder.exists() && folder.isDirectory()) {
+            // Seleziona solo i file che terminano con .txt
+            File[] levelFiles = folder.listFiles((dir, name) -> name.toLowerCase().endsWith(".txt"));
+            
+            if (levelFiles != null) {
+                // Ordina alfabeticamente i livelli (es: map_1_1.txt prima di map_1_2.txt)
+                Arrays.sort(levelFiles, (f1, f2) -> f1.getName().compareTo(f2.getName()));
+
+                for (File file : levelFiles) {
+                    levels.add(new LevelImpl(this, file.getPath()));
+                }
             }
+        } else {
+            System.err.println("Cartella del mondo non trovata: " + worldFolderPath);
         }
     }
 

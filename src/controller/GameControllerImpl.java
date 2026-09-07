@@ -78,12 +78,24 @@ public class GameControllerImpl extends KeyAdapter implements GameController {
         if (state == GameState.WORLD_SELECTION) {
             WorldSelectionPanel selectionPanel = panel.getWorldSelectionPanel();
             switch (code) {
-                case KeyEvent.VK_UP, KeyEvent.VK_W -> { selectionPanel.navigateVertical(-1); panel.repaint(); }
-                case KeyEvent.VK_DOWN, KeyEvent.VK_S -> { selectionPanel.navigateVertical(1); panel.repaint(); }
+                case KeyEvent.VK_UP, KeyEvent.VK_W -> { 
+                    selectionPanel.navigateVertical(-1, model); 
+                    panel.repaint(); 
+                }
+                case KeyEvent.VK_DOWN, KeyEvent.VK_S -> { 
+                    selectionPanel.navigateVertical(1, model); 
+                    panel.repaint(); 
+                }
                 case KeyEvent.VK_ENTER, KeyEvent.VK_SPACE -> {
-                    if (selectionPanel.getSelectedWorldIndex() == 3) {
+                    int selectedIndex = selectionPanel.getSelectedWorldIndex();
+                    int totalWorlds = model.getWorlds().size();
+
+                    if (selectedIndex == totalWorlds) {
+                        // Tasto "Torna al Menu Principale"
                         panel.setCurrentState(GameState.MENU);
                     } else {
+                        // Selezione di un mondo valido
+                        model.changeWorld(selectedIndex);
                         panel.setSelectedLevelIndex(0);
                         panel.setCurrentState(GameState.LEVEL_SELECTION);
                     }

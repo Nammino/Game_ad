@@ -1,9 +1,8 @@
 package model;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class GameStructImpl implements GameStruct {
 
@@ -20,7 +19,7 @@ public class GameStructImpl implements GameStruct {
         this.worlds = new ArrayList<>();
         this.currentWorldIndex = 0;
         
-        loadWorlds("worlds.txt");
+        loadWorlds("worlds");
     }
 
     @Override
@@ -29,31 +28,28 @@ public class GameStructImpl implements GameStruct {
     }
 
     @Override
-    public void loadWorlds(String path) {
+    public void loadWorlds(String folderPath) {
         worlds.clear();
-        
-        try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                line = line.trim();
-                if (line.isEmpty() || line.startsWith("#")) {
-                    continue;
-                }
-                
-                String[] parts = line.split("/");
-                if (parts.length >= 3) {
-                    int worldId = Integer.parseInt(parts[0].trim());
-                    String worldName = parts[1].trim();
-                    String worldPath = parts[2].trim();
+        File worldsDir = new File(folderPath);
+
+        if (worldsDir.exists() && worldsDir.isDirectory()) {
+            File[] worldFolders = worldsDir.listFiles(File::isDirectory);
+            
+            if (worldFolders != null) {
+                Arrays.sort(worldFolders, (f1, f2) -> f1.getName().compareTo(f2.getName()));
+
+                int worldId = 1;
+                for (File folder : worldFolders) {
+                    // Prende il nome della cartella (es: world_1, world_2)
+                    String worldName = folder.getName();
                     
-                    World world = new WorldImpl(this, worldId, worldName, worldPath);
+                    World world = new WorldImpl(this, worldId, worldName, folder.getPath());
                     worlds.add(world);
+                    worldId++;
                 }
             }
-        } catch (IOException e) {
-            System.err.println("Errore di caricamento dei mondi dal file: " + path);
-        } catch (NumberFormatException e) {
-            System.err.println("Formato ID non valido nel file mondi: " + path);
+        } else {
+            System.err.println("Cartella mondi non trovata: " + folderPath);
         }
     }
 
@@ -82,6 +78,7 @@ public class GameStructImpl implements GameStruct {
         return entityPlacer;
     }
 
+    @Override
     public ArrayList<World> getWorlds() {
         return worlds;
     }

@@ -6,29 +6,37 @@ import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.util.ArrayList;
+
+import model.GameStruct;
+import model.World;
 
 public class WorldSelectionPanel {
 
-    private final String[] worlds = {"Mondo 1: Prato Verde", "Mondo 2: Isola Dolce", "Mondo 3: Castello Rosa"};
     private int selectedWorldIndex = 0;
-
-    private final Rectangle[] worldBounds = new Rectangle[worlds.length];
+    private final ArrayList<Rectangle> worldBounds = new ArrayList<>();
     private final Rectangle backButtonBounds = new Rectangle();
 
-    public WorldSelectionPanel() {
-        for (int i = 0; i < worldBounds.length; i++) {
-            worldBounds[i] = new Rectangle();
-        }
-    }
+    public WorldSelectionPanel() {}
 
     public int getSelectedWorldIndex() { return selectedWorldIndex; }
 
-    public void navigateVertical(int direction) {
-        int total = worlds.length + 1; // Mondi + Tasto Torna indietro
+    public void navigateVertical(int direction, GameStruct model) {
+        if (model == null) return;
+        int totalWorlds = model.getWorlds().size();
+        int total = totalWorlds + 1; // Mondi + Tasto Indietro
+        if (total == 1) return;
         selectedWorldIndex = (selectedWorldIndex + direction + total) % total;
     }
 
-    public void draw(Graphics2D g2, GamePanel panel) {
+    public void draw(Graphics2D g2, GamePanel panel, GameStruct model) {
+        if (model == null) return;
+        ArrayList<World> worlds = model.getWorlds();
+
+        while (worldBounds.size() < worlds.size()) {
+            worldBounds.add(new Rectangle());
+        }
+
         g2.setFont(new Font("Arial", Font.BOLD, 36));
         g2.setColor(Color.YELLOW);
         String title = "SELEZIONE MONDO";
@@ -37,14 +45,14 @@ public class WorldSelectionPanel {
         g2.setFont(new Font("Arial", Font.BOLD, 22));
         FontMetrics metrics = g2.getFontMetrics();
 
-        // Disegno lista mondi
-        for (int i = 0; i < worlds.length; i++) {
-            String text = worlds[i];
+        // Disegna la lista reale dal Model
+        for (int i = 0; i < worlds.size(); i++) {
+            String text = worlds.get(i).getName();
             int textWidth = metrics.stringWidth(text);
             int x = (panel.getWidth() - textWidth) / 2;
             int y = 220 + (i * 60);
 
-            worldBounds[i].setBounds(x - 20, y - metrics.getAscent(), textWidth + 40, metrics.getHeight() + 10);
+            worldBounds.get(i).setBounds(x - 20, y - metrics.getAscent(), textWidth + 40, metrics.getHeight() + 10);
 
             if (i == selectedWorldIndex) {
                 g2.setColor(Color.GREEN);
@@ -55,13 +63,13 @@ public class WorldSelectionPanel {
             }
         }
 
-        // Tasto Torna al Menu
+        // Tasto Indietro
         String backText = "< Torna al Menu Principale >";
         int backX = getCenteredX(g2, backText, panel.getWidth());
-        int backY = 480;
+        int backY = 220 + (worlds.size() * 60) + 40;
         backButtonBounds.setBounds(backX, backY - metrics.getAscent(), metrics.stringWidth(backText), metrics.getHeight());
 
-        if (selectedWorldIndex == worlds.length) {
+        if (selectedWorldIndex == worlds.size()) {
             g2.setColor(Color.CYAN);
             g2.drawString("> " + backText + " <", backX - 20, backY);
         } else {
@@ -70,17 +78,21 @@ public class WorldSelectionPanel {
         }
     }
 
+    public boolean handleMouseClick(Point mousePoint, GamePanel panel, GameStruct model) {
+        if (model == null) return false;
+        ArrayList<World> worlds = model.getWorlds();
 
-    public boolean handleMouseClick(Point mousePoint, GamePanel panel) {
         if (backButtonBounds.contains(mousePoint)) {
             panel.setCurrentState(GameState.MENU);
             return true;
         }
-        for (int i = 0; i < worlds.length; i++) {
-            if (worldBounds[i].contains(mousePoint)) {
+
+        for (int i = 0; i < worlds.size(); i++) {
+            if (worldBounds.get(i).contains(mousePoint)) {
                 selectedWorldIndex = i;
-                panel.setSelectedLevelIndex(0); // Resetta l'indice del livello
-                panel.setCurrentState(GameState.LEVEL_SELECTION); // <--- PASSA ALLA SELEZIONE LIVELLO
+                model.changeWorld(i);
+                panel.setSelectedLevelIndex(0);
+                panel.setCurrentState(GameState.LEVEL_SELECTION);
                 return true;
             }
         }

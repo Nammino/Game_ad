@@ -26,7 +26,7 @@ public class GamePanel extends JPanel {
     private final WorldSelectionPanel worldSelectionPanel;
     private final LevelSelectionPanel levelSelectionPanel;
     private final PlayingPanel playingPanel;
-    private final PausePanel pausePanel; // <--- NUOVO
+    private final PausePanel pausePanel;
 
     private int selectedLevelIndex = 0;
     private int currentOptionIndex = 0;
@@ -40,10 +40,10 @@ public class GamePanel extends JPanel {
         this.setFocusable(true);
 
         this.settingsPanel = new SettingsPanel();
-        this.worldSelectionPanel = new WorldSelectionPanel();
+        this.worldSelectionPanel = new WorldSelectionPanel(); // Costruttore senza parametri
         this.levelSelectionPanel = new LevelSelectionPanel();
         this.playingPanel = new PlayingPanel();
-        this.pausePanel = new PausePanel(); // <--- INIZIALIZZAZIONE
+        this.pausePanel = new PausePanel();
 
         // GAME LOOP (esegue il tick solo se in stato PLAYING)
         this.gameLoop = new Timer(16, e -> {
@@ -66,7 +66,8 @@ public class GamePanel extends JPanel {
                         repaint();
                     }
                 } else if (currentState == GameState.WORLD_SELECTION) {
-                    if (worldSelectionPanel.handleMouseClick(e.getPoint(), GamePanel.this)) {
+                    // Passa il 'model' al mouse handler
+                    if (worldSelectionPanel.handleMouseClick(e.getPoint(), GamePanel.this, model)) {
                         repaint();
                     }
                 }
@@ -96,6 +97,8 @@ public class GamePanel extends JPanel {
         this.model = model;
     }
 
+    public GameStruct getModel() { return model; }
+
     public GameState getCurrentState() { return currentState; }
     public void setCurrentState(GameState state) { this.currentState = state; }
 
@@ -103,7 +106,7 @@ public class GamePanel extends JPanel {
     public WorldSelectionPanel getWorldSelectionPanel() { return worldSelectionPanel; }
     public LevelSelectionPanel getLevelSelectionPanel() { return levelSelectionPanel; }
     public PlayingPanel getPlayingPanel() { return playingPanel; }
-    public PausePanel getPausePanel() { return pausePanel; } // <--- GETTER
+    public PausePanel getPausePanel() { return pausePanel; }
 
     public int getSelectedLevelIndex() { return selectedLevelIndex; }
     public void setSelectedLevelIndex(int index) { this.selectedLevelIndex = index; }
@@ -138,12 +141,12 @@ public class GamePanel extends JPanel {
         switch (currentState) {
             case MENU -> drawMenu(g2);
             case SETTINGS -> settingsPanel.draw(g2, this);
-            case WORLD_SELECTION -> worldSelectionPanel.draw(g2, this);
+            case WORLD_SELECTION -> worldSelectionPanel.draw(g2, this, model); // Passa 'model'
             case LEVEL_SELECTION -> levelSelectionPanel.draw(g2, this, model);
             case PLAYING -> playingPanel.draw(g2, this, model);
             case PAUSE -> {
-                playingPanel.draw(g2, this, model); // Disegna lo sfondo del gioco fermato
-                pausePanel.draw(g2, this);         // Disegna sopra il menu di pausa
+                playingPanel.draw(g2, this, model);
+                pausePanel.draw(g2, this);
             }
         }
     }
