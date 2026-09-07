@@ -12,6 +12,7 @@ import model.World;
 public class PlayingPanel {
 
     public void draw(Graphics2D g2, GamePanel panel, GameStruct model) {
+        // Sfondo del cielo
         g2.setColor(new Color(107, 140, 255));
         g2.fillRect(0, 0, GamePanel.PANEL_WIDTH, GamePanel.PANEL_HEIGHT);
 
@@ -31,9 +32,11 @@ public class PlayingPanel {
         int cameraX = (int) player.getPosition().getX() - (GamePanel.PANEL_WIDTH / 2) + (tileSize / 2);
         int cameraY = (int) player.getPosition().getY() - (GamePanel.PANEL_HEIGHT / 2) + (tileSize / 2);
 
+        // Blocco camera al bordo sinistro e superiore
         if (cameraX < 0) cameraX = 0;
         if (cameraY < 0) cameraY = 0;
 
+        // Blocco camera al bordo destro
         int maxMapWidth = map.get(0).length() * tileSize;
         if (cameraX > maxMapWidth - GamePanel.PANEL_WIDTH) {
             cameraX = Math.max(0, maxMapWidth - GamePanel.PANEL_WIDTH);
@@ -70,7 +73,7 @@ public class PlayingPanel {
             }
         }
 
-        // Disegno Giocatore
+        // Disegno Giocatore (Rettangolo Rosso)
         g2.setColor(Color.RED);
         g2.fillRect(
             (int) player.getPosition().getX(),
@@ -79,7 +82,7 @@ public class PlayingPanel {
             tileSize
         );
 
-        // --- RIPRISTINO TRASLAZIONE PER L'HUD ---
+        // --- RIPRISTINO TRASLAZIONE PER L'HUD (Interfaccia Fissa) ---
         g2.translate(cameraX, cameraY);
 
         g2.setColor(Color.WHITE);

@@ -48,6 +48,17 @@ public class CollisionManagerImpl implements CollisionManager {
         }
 
         player.getPosition().setX(player.getPosition().getX() + player.getVelocity().getX());
+
+        int mapWidthPixels = map.get(0).length() * tileSize;
+
+        if (player.getPosition().getX() < 0) {
+            player.getPosition().setX(0);
+        }
+
+        if (player.getPosition().getX() + tileSize > mapWidthPixels) {
+            player.getPosition().setX(mapWidthPixels - tileSize);
+        }
+
         Rectangle playerBoundsX = new Rectangle((int) player.getPosition().getX(), (int) player.getPosition().getY(), tileSize, tileSize);
 
         for (int row = startRow; row <= endRow; row++) {
