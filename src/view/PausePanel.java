@@ -22,18 +22,15 @@ public class PausePanel {
     }
 
     public void draw(Graphics2D g2, GamePanel panel) {
-        // Overlay semitrasparente scuro sul gioco fermo
         g2.setColor(new Color(0, 0, 0, 180));
         g2.fillRect(0, 0, GamePanel.PANEL_WIDTH, GamePanel.PANEL_HEIGHT);
 
-        // Titolo
         g2.setFont(new Font("Arial", Font.BOLD, 36));
         g2.setColor(Color.YELLOW);
         String title = "PAUSA";
         FontMetrics metrics = g2.getFontMetrics();
         g2.drawString(title, (GamePanel.PANEL_WIDTH - metrics.stringWidth(title)) / 2, 160);
 
-        // Opzioni Menu
         g2.setFont(new Font("Arial", Font.BOLD, 22));
         FontMetrics optionMetrics = g2.getFontMetrics();
 

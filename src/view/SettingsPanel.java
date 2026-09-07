@@ -24,14 +24,12 @@ public class SettingsPanel {
     private final Rectangle applyButtonBounds = new Rectangle();
     private final Rectangle backButtonBounds = new Rectangle();
 
-    // VALORI TEMPORANEI (IN MODIFICA)
     private int tempMusicVol = 80, tempSfxVol = 100;
     private boolean tempMuted = false;
     private int tempResIdx = 0, tempFpsIdx = 1;
     private boolean tempFullScreen = false, tempVSync = true;
     private boolean tempCloudSave = true;
 
-    // VALORI APPLICATI
     private int appliedMusicVol = 80, appliedSfxVol = 100;
     private boolean appliedMuted = false;
     private int appliedResIdx = 0, appliedFpsIdx = 1;

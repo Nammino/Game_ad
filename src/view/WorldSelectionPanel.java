@@ -45,7 +45,6 @@ public class WorldSelectionPanel {
         g2.setFont(new Font("Arial", Font.BOLD, 22));
         FontMetrics metrics = g2.getFontMetrics();
 
-        // Disegna la lista reale dal Model
         for (int i = 0; i < worlds.size(); i++) {
             String text = worlds.get(i).getName();
             int textWidth = metrics.stringWidth(text);
@@ -63,7 +62,6 @@ public class WorldSelectionPanel {
             }
         }
 
-        // Tasto Indietro
         String backText = "< Torna al Menu Principale >";
         int backX = getCenteredX(g2, backText, panel.getWidth());
         int backY = 220 + (worlds.size() * 60) + 40;

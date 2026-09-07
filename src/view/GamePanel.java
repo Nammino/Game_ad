@@ -1,6 +1,7 @@
 package view;
 
 import java.awt.Color;
+
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
@@ -13,6 +14,8 @@ import javax.swing.JPanel;
 import javax.swing.Timer;
 import model.GameStruct;
 import model.Level;
+import model.CollisionManager;
+import model.CollisionManagerImpl;
 
 public class GamePanel extends JPanel {
 
@@ -27,6 +30,8 @@ public class GamePanel extends JPanel {
     private final LevelSelectionPanel levelSelectionPanel;
     private final PlayingPanel playingPanel;
     private final PausePanel pausePanel;
+    
+    private final CollisionManager collisionManager = new CollisionManagerImpl();
 
     private int selectedLevelIndex = 0;
     private int currentOptionIndex = 0;
@@ -40,12 +45,11 @@ public class GamePanel extends JPanel {
         this.setFocusable(true);
 
         this.settingsPanel = new SettingsPanel();
-        this.worldSelectionPanel = new WorldSelectionPanel(); // Costruttore senza parametri
+        this.worldSelectionPanel = new WorldSelectionPanel(); 
         this.levelSelectionPanel = new LevelSelectionPanel();
         this.playingPanel = new PlayingPanel();
         this.pausePanel = new PausePanel();
 
-        // GAME LOOP (esegue il tick solo se in stato PLAYING)
         this.gameLoop = new Timer(16, e -> {
             if (currentState == GameState.PLAYING && model != null) {
                 if (model.getCurrentWorld() != null && !model.getCurrentWorld().getLevels().isEmpty()) {
@@ -57,7 +61,6 @@ public class GamePanel extends JPanel {
         });
         this.gameLoop.start();
 
-        // LISTENER MOUSE
         this.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
@@ -66,7 +69,6 @@ public class GamePanel extends JPanel {
                         repaint();
                     }
                 } else if (currentState == GameState.WORLD_SELECTION) {
-                    // Passa il 'model' al mouse handler
                     if (worldSelectionPanel.handleMouseClick(e.getPoint(), GamePanel.this, model)) {
                         repaint();
                     }

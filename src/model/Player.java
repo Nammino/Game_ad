@@ -5,12 +5,10 @@ import java.util.ArrayList;
 
 public class Player extends Character {
 
-    // --- FISICA VELOCIZZATA ---
     private final double GRAVITY = 0.8;
     private final double JUMP_STRENGTH = -13.9;
     private final double MOVE_SPEED = 4.0;
 
-    // --- SISTEMA DI VITA ---
     private final int maxHealth = 100;
     private int health = 100;
 
@@ -44,7 +42,6 @@ public class Player extends Character {
     public void setJumpRequested(boolean jumpRequested) { this.jumpRequested = jumpRequested; }
 
     public void update(ArrayList<String> map) {
-        // --- 1. MOVIMENTO ORIZZONTALE ---
         if (left && !right) {
             getVelocity().setX(-MOVE_SPEED);
         } else if (right && !left) {
@@ -53,27 +50,22 @@ public class Player extends Character {
             getVelocity().setX(0);
         }
 
-        // --- 2. SALTO ---
         if (jumpRequested && isGrounded()) {
             getVelocity().setY(JUMP_STRENGTH);
             setGrounded(false);
             jumpRequested = false;
         }
 
-        // --- 3. GRAVITÀ ---
         getVelocity().setY(getVelocity().getY() + GRAVITY);
 
         int tileSize = GameStruct.TILE_SIZE;
 
-        // --- 4. FISICA X E BORDI MAPPA ---
         getPosition().setX(getPosition().getX() + getVelocity().getX());
 
-        // Limite sinistro schermata
         if (getPosition().getX() < 0) {
             getPosition().setX(0);
         } 
         
-        // Limite destro schermata
         if (map != null && !map.isEmpty() && map.get(0) != null) {
             int mapWidthPixels = map.get(0).length() * tileSize;
             if (getPosition().getX() > mapWidthPixels - tileSize) {
@@ -94,7 +86,6 @@ public class Player extends Character {
             }
         }
 
-        // --- 5. FISICA Y E COLLISIONI TERRENO ---
         getPosition().setY(getPosition().getY() + getVelocity().getY());
         getBoundingBox().setBounds((int) Math.round(getPosition().getX()), (int) Math.round(getPosition().getY()), tileSize, tileSize);
 
@@ -113,17 +104,16 @@ public class Player extends Character {
             }
         }
 
-        // --- 6. CONTROLLO CADUTA NEL VUOTO ---
         if (map != null && !map.isEmpty()) {
             int mapHeightPixels = map.size() * tileSize;
             if (getPosition().getY() > mapHeightPixels + 100) {
-                takeDamage(maxHealth); // Muore istantaneamente se cade fuori dalla mappa
+                takeDamage(maxHealth); 
             }
         }
     }
 
     @Override
-    public void update() { // Nota: correggere il typo 'piblic' se presente, usa 'public'
+    public void update() {
         update(null);
     }
 

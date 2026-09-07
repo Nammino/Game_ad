@@ -39,15 +39,13 @@ public class WorldImpl implements World {
 
         File folder = new File(worldFolderPath);
         if (folder.exists() && folder.isDirectory()) {
-            // Seleziona solo i file che terminano con .txt
-            File[] levelFiles = folder.listFiles((dir, name) -> name.toLowerCase().endsWith(".txt"));
+            File[] levelFolders = folder.listFiles(File::isDirectory);
             
-            if (levelFiles != null) {
-                // Ordina alfabeticamente i livelli (es: map_1_1.txt prima di map_1_2.txt)
-                Arrays.sort(levelFiles, (f1, f2) -> f1.getName().compareTo(f2.getName()));
+            if (levelFolders != null) {
+                Arrays.sort(levelFolders, (f1, f2) -> f1.getName().compareTo(f2.getName()));
 
-                for (File file : levelFiles) {
-                    levels.add(new LevelImpl(this, file.getPath()));
+                for (File levelFolder : levelFolders) {
+                    levels.add(new LevelImpl(this, levelFolder.getPath()));
                 }
             }
         } else {

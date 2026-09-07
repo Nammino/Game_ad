@@ -15,27 +15,28 @@ public class EntityPlacerImpl implements EntityPlacer {
             return entities;
         }
 
+        int tileSize = GameStruct.TILE_SIZE;
+
         try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
             String line;
+            int row = 0;
+
             while ((line = reader.readLine()) != null) {
-                line = line.trim();
+                for (int col = 0; col < line.length(); col++) {
+                    char tileChar = line.charAt(col);
+                    
+                    double x = col * tileSize;
+                    double y = row * tileSize;
 
-                if (line.isEmpty() || line.startsWith("//")) {
-                    continue;
+                    switch (tileChar) {
+                        case 'G', 'D' -> entities.add(new Goal(x, y));
+
+                    }
                 }
-
-                String[] parts = line.split(",");
-                if (parts.length >= 3) {
-                    String type = parts[0].trim();
-                    double x = Double.parseDouble(parts[1].trim());
-                    double y = Double.parseDouble(parts[2].trim());
-
-                }
+                row++;
             }
         } catch (IOException e) {
-            System.err.println("Nessun file entità trovato in: " + path + " (verrà caricato un livello senza entità dinamiche)");
-        } catch (NumberFormatException e) {
-            System.err.println("Errore di formato coordinate nel file entità: " + path);
+            // File degli oggetti opzionale: se non esiste, non blocca il gioco
         }
 
         return entities;

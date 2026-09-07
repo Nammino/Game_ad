@@ -7,7 +7,6 @@ public class GameFrame extends JFrame {
 
     private final GamePanel gamePanel;
 
-    // Costruttore senza parametri per risolvere "The constructor GameFrame() is undefined"
     public GameFrame() {
         this.gamePanel = new GamePanel();
         
@@ -19,7 +18,6 @@ public class GameFrame extends JFrame {
         this.setLocationRelativeTo(null);
     }
 
-    // Costruttore alternativo con GamePanel (se necessario altrove)
     public GameFrame(GamePanel panel) {
         this.gamePanel = panel;
         
@@ -31,24 +29,20 @@ public class GameFrame extends JFrame {
         this.setLocationRelativeTo(null);
     }
 
-    // Getter richiesto per risolvere "The method getGamePanel() is undefined"
     public GamePanel getGamePanel() {
         return gamePanel;
     }
 
-    // Metodo richiesto per risolvere "The method display() is undefined"
     public void display() {
         this.setVisible(true);
     }
 
-    // Gestione ridimensionamento da SettingsPanel
     public void setWindowSize(int width, int height) {
         gamePanel.setPreferredSize(new Dimension(width, height));
         this.pack();
         this.setLocationRelativeTo(null);
     }
 
-    // Gestione Schermo Intero da SettingsPanel
     public void setFullScreen(boolean fullScreen) {
         this.dispose();
         this.setUndecorated(fullScreen);

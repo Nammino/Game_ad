@@ -28,6 +28,18 @@ public class GameControllerImpl extends KeyAdapter implements GameController {
         GameState state = panel.getCurrentState();
 
         if (state == GameState.PLAYING) {
+            model.Level currentLevel = model.getCurrentWorld().getLevels().get(panel.getSelectedLevelIndex());
+
+            // SE IL LIVELLO È COMPLETATO: premi INVIO per tornare alla selezione livelli
+            if (currentLevel.isCompleted()) {
+                if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE) {
+                    panel.resetPlayerPosition();
+                    panel.setCurrentState(GameState.LEVEL_SELECTION);
+                    panel.repaint();
+                }
+                return; 
+            }
+
             Player player = model.getPlayer();
             if (player != null) {
                 switch (code) {
@@ -91,10 +103,8 @@ public class GameControllerImpl extends KeyAdapter implements GameController {
                     int totalWorlds = model.getWorlds().size();
 
                     if (selectedIndex == totalWorlds) {
-                        // Tasto "Torna al Menu Principale"
                         panel.setCurrentState(GameState.MENU);
                     } else {
-                        // Selezione di un mondo valido
                         model.changeWorld(selectedIndex);
                         panel.setSelectedLevelIndex(0);
                         panel.setCurrentState(GameState.LEVEL_SELECTION);

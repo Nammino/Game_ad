@@ -6,8 +6,8 @@ import java.util.ArrayList;
 public class CollisionManagerImpl implements CollisionManager {
 
     @Override
-    public void checkTileCollisions(Player player, ArrayList<String> map) {
-        if (map == null || map.isEmpty()) return;
+    public boolean checkTileCollisions(Player player, ArrayList<String> map) {
+        if (map == null || map.isEmpty()) return false;
 
         int tileSize = GameStruct.TILE_SIZE;
 
@@ -25,20 +25,31 @@ public class CollisionManagerImpl implements CollisionManager {
         Rectangle playerBoundsY = new Rectangle((int) player.getPosition().getX(), (int) player.getPosition().getY(), tileSize, tileSize);
 
         player.setGrounded(false);
+        boolean levelCompleted = false;
 
+        // Controllo collisioni asse Y
         for (int row = startRow; row <= endRow; row++) {
             String line = map.get(row);
             for (int col = startCol; col <= endCol; col++) {
                 char tile = line.charAt(col);
+                
+                // Se il giocatore tocca il tunnel '='
+                if (tile == '=') {
+                    Rectangle tileBounds = new Rectangle(col * tileSize, row * tileSize, tileSize, tileSize);
+                    if (playerBoundsY.intersects(tileBounds)) {
+                        levelCompleted = true;
+                    }
+                }
+
                 if (isSolid(tile)) {
                     Rectangle tileBounds = new Rectangle(col * tileSize, row * tileSize, tileSize, tileSize);
 
                     if (playerBoundsY.intersects(tileBounds)) {
-                        if (player.getVelocity().getY() > 0) { 
+                        if (player.getVelocity().getY() > 0) {  
                             player.getPosition().setY(tileBounds.y - tileSize);
                             player.getVelocity().setY(0);
                             player.setGrounded(true);
-                        } else if (player.getVelocity().getY() < 0) { 
+                        } else if (player.getVelocity().getY() < 0) {  
                             player.getPosition().setY(tileBounds.y + tileSize);
                             player.getVelocity().setY(0);
                         }
@@ -61,26 +72,39 @@ public class CollisionManagerImpl implements CollisionManager {
 
         Rectangle playerBoundsX = new Rectangle((int) player.getPosition().getX(), (int) player.getPosition().getY(), tileSize, tileSize);
 
+        // Controllo collisioni asse X
         for (int row = startRow; row <= endRow; row++) {
             String line = map.get(row);
             for (int col = startCol; col <= endCol; col++) {
                 char tile = line.charAt(col);
+                
+                // Se il giocatore tocca il tunnel '='
+                if (tile == '=') {
+                    Rectangle tileBounds = new Rectangle(col * tileSize, row * tileSize, tileSize, tileSize);
+                    if (playerBoundsX.intersects(tileBounds)) {
+                        levelCompleted = true;
+                    }
+                }
+
                 if (isSolid(tile)) {
                     Rectangle tileBounds = new Rectangle(col * tileSize, row * tileSize, tileSize, tileSize);
 
                     if (playerBoundsX.intersects(tileBounds)) {
-                        if (player.getVelocity().getX() > 0) { 
+                        if (player.getVelocity().getX() > 0) {  
                             player.getPosition().setX(tileBounds.x - tileSize);
-                        } else if (player.getVelocity().getX() < 0) { 
+                        } else if (player.getVelocity().getX() < 0) {  
                             player.getPosition().setX(tileBounds.x + tileSize);
                         }
                     }
                 }
             }
         }
+
+        return levelCompleted;
     }
 
     private boolean isSolid(char tile) {
+        // Il '=' NON deve essere solido, altrimenti il player ci cammina sopra o si blocca
         return tile == '#' || tile == '?';
     }
 }

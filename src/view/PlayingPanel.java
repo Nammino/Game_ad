@@ -4,6 +4,8 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
+import model.Entity;
+import model.Goal;
 import model.GameStruct;
 import model.Level;
 import model.Player;
@@ -15,7 +17,7 @@ public class PlayingPanel {
         int panelWidth = panel.getWidth();
         int panelHeight = panel.getHeight();
 
-        // --- SFONDO ADATTATIVO ---
+        // --- SFONDO ---
         g2.setColor(new Color(107, 140, 255));
         g2.fillRect(0, 0, panelWidth, panelHeight);
 
@@ -29,7 +31,7 @@ public class PlayingPanel {
 
         if (player == null || map == null || map.isEmpty()) return;
 
-        // --- CONTROLLO MORTE / RESET AUTOMATICO ---
+        // --- CONTROLLO MORTE / RESET ---
         if (player.getHealth() <= 0) {
             panel.resetPlayerPosition();
             player.resetHealth();
@@ -38,24 +40,38 @@ public class PlayingPanel {
 
         int tileSize = GameStruct.TILE_SIZE;
 
-        // --- CALCOLO POSIZIONE CAMERA ADATTATIVO ---
+     // --- CAMERA ---
         int playerX = (int) Math.round(player.getPosition().getX());
-        int cameraX = playerX - (panelWidth / 2) + (tileSize / 2);
-        int cameraY = 0; // Camera fissa in verticale per stabilità
+        int playerY = (int) Math.round(player.getPosition().getY()); 
+        
+        int cameraX = (int) Math.round(playerX - (panelWidth / 2.0) + (tileSize / 2.0));
+        int cameraY = (int) Math.round(playerY - (panelHeight / 2.0) + (tileSize / 2.0));
 
-        // Blocco camera al bordo sinistro
+        // Limiti orizzontali
         if (cameraX < 0) cameraX = 0;
-
-        // Blocco camera al bordo destro
         int maxMapWidth = map.get(0).length() * tileSize;
         if (cameraX > maxMapWidth - panelWidth) {
             cameraX = Math.max(0, maxMapWidth - panelWidth);
         }
 
-        // --- TRASLAZIONE CAMERA ---
+        // --- LIMITI VERTICALI STABILI ---
+        int maxMapHeight = map.size() * tileSize;
+        
+        // Se la mappa è più piccola o uguale all'altezza del pannello, 
+        // blocchiamo la camera fissa a 0 ed evitiamo qualsiasi movimento verticale superfluo!
+        if (maxMapHeight <= panelHeight) {
+            cameraY = 0;
+        } else {
+            if (cameraY < 0) cameraY = 0;
+            if (cameraY > maxMapHeight - panelHeight) {
+                cameraY = maxMapHeight - panelHeight;
+            }
+        }
+
         g2.translate(-cameraX, -cameraY);
 
         // Disegno Mappa
+     // Disegno Mappa
         for (int row = 0; row < map.size(); row++) {
             String line = map.get(row);
             for (int col = 0; col < line.length(); col++) {
@@ -83,6 +99,30 @@ public class PlayingPanel {
             }
         }
 
+        // --- DISEGNO E GESTIONE DELL'OGGETTO DI VITTORIA (Goal) ---
+        if (level.getEntities() != null) {
+            for (Entity entity : level.getEntities()) {
+                if (entity instanceof Goal goal) {
+                    int gx = (int) Math.round(goal.getPosition().getX());
+                    int gy = (int) Math.round(goal.getPosition().getY());
+
+                    // Disegno la porta (Verde con una 'D')
+                    g2.setColor(new Color(0, 200, 100));
+                    g2.fillRect(gx, gy, tileSize, tileSize);
+                    g2.setColor(Color.WHITE);
+                    g2.setFont(new Font("Arial", Font.BOLD, 18));
+                    g2.drawString("D", gx + 11, gy + 24);
+                    g2.setColor(Color.BLACK);
+                    g2.drawRect(gx, gy, tileSize, tileSize);
+
+                    // Se il giocatore tocca il traguardo
+                    if (player.getBoundingBox().intersects(goal.getBoundingBox())) {
+                        level.setCompleted(true); // Segna il livello come completato
+                    }
+                }
+            }
+        }
+
         // Disegno Giocatore
         g2.setColor(Color.RED);
         g2.fillRect(
@@ -92,15 +132,14 @@ public class PlayingPanel {
             tileSize
         );
 
-        // --- RIPRISTINO TRASLAZIONE PER L'HUD ---
+        // --- RIPRISTINO CAMERA PER L'HUD E I MESSAGGI FISSI ---
         g2.translate(cameraX, cameraY);
 
-        // --- HUD / BARRA DELLA VITA E COMANDI ---
+        // --- HUD / BARRA VITA ---
         g2.setColor(Color.WHITE);
         g2.setFont(new Font("Arial", Font.BOLD, 14));
         g2.drawString("Usa A/D per Muoverti, SPAZIO per Saltare | ESC per Uscire", 20, 25);
 
-        // Disegno della barra della vita in alto a sinistra
         int barX = 20;
         int barY = 35;
         int barWidth = 180;
@@ -118,5 +157,26 @@ public class PlayingPanel {
 
         g2.setFont(new Font("Arial", Font.BOLD, 11));
         g2.drawString("HP: " + player.getHealth() + " / " + player.getMaxHealth(), barX + 50, barY + 14);
+
+        // --- SCHERMATA / SCRITTA DI VITTORIA SE IL LIVELLO È COMPLETATO ---
+        if (level.isCompleted()) {
+            // Sfondo semi-trasparente scuro al centro
+            g2.setColor(new Color(0, 0, 0, 150));
+            g2.fillRect(0, 0, panelWidth, panelHeight);
+
+            // Scritta principale di vittoria
+            g2.setColor(new Color(0, 255, 120));
+            g2.setFont(new Font("Arial", Font.BOLD, 36));
+            String msg = "LIVELLO COMPLETATO!";
+            int msgWidth = g2.getFontMetrics().stringWidth(msg);
+            g2.drawString(msg, (panelWidth - msgWidth) / 2, panelHeight / 2 - 20);
+
+            // Sottotitolo con istruzioni per tornare al menu
+            g2.setColor(Color.WHITE);
+            g2.setFont(new Font("Arial", Font.PLAIN, 18));
+            String subMsg = "Premi INVIO per tornare alla selezione livelli";
+            int subWidth = g2.getFontMetrics().stringWidth(subMsg);
+            g2.drawString(subMsg, (panelWidth - subWidth) / 2, panelHeight / 2 + 25);
+        }
     }
 }

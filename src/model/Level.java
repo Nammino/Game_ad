@@ -11,4 +11,8 @@ public interface Level {
     ArrayList<String> getMap();
 
     ArrayList<Entity> getEntities();
+
+    boolean isCompleted(); 
+
+    void setCompleted(boolean completed); 
 }
