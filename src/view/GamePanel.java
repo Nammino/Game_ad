@@ -16,10 +16,14 @@ import javax.swing.JPanel;
 import javax.swing.Timer;
 
 import model.GameStruct;
+import model.ItemInstance;
 import model.Level;
 import model.Player;
+import model.Projectile;
+import model.ShootingEnemy;
 import model.CollisionManager;
 import model.CollisionManagerImpl;
+import model.Enemy;
 import model.Entity;
 
 public class GamePanel extends JPanel {
@@ -37,11 +41,16 @@ public class GamePanel extends JPanel {
     private final PausePanel pausePanel;
     private final InventoryPanel inventoryPanel;
     
-    private final CollisionManager collisionManager = new CollisionManagerImpl();
-
+    private final CollisionManager collisionManager;
+    private List<Projectile> playerProjectiles = new ArrayList<>();
+    
+    // Variabile per gestire la durata dell'animazione della spada (in fotogrammi)
+    private int swordAnimationFrames = 0;
+    
     private int selectedLevelIndex = 0;
     private int currentOptionIndex = 0;
     private int selectedSlot = 0;
+    
     private final String[] menuOptions = {"Nuova Partita", "Carica Partita", "Impostazioni", "Esci"};
 
     private Timer gameLoop;
@@ -57,6 +66,7 @@ public class GamePanel extends JPanel {
         this.playingPanel = new PlayingPanel();
         this.pausePanel = new PausePanel();
         this.inventoryPanel = new InventoryPanel();
+        this.collisionManager = new CollisionManagerImpl();
 
         // GAME LOOP: blocca tutto se il livello è completato o se non siamo in PLAYING
         this.gameLoop = new Timer(16, e -> {
@@ -64,13 +74,27 @@ public class GamePanel extends JPanel {
                 if (model.getCurrentWorld() != null && !model.getCurrentWorld().getLevels().isEmpty()) {
                     Level currentLevel = model.getCurrentWorld().getLevels().get(selectedLevelIndex);
                     
-                    // SE IL LIVELLO NON È COMPLETATO, AGGIORNA. SE È COMPLETATO, CONGELA TUTTO!
                     if (!currentLevel.isCompleted()) {
                         model.getPlayer().update(currentLevel.getMap());
                         
+                        // Decrementa il contatore dell'animazione della spada ad ogni fotogramma
+                        if (swordAnimationFrames > 0) {
+                            swordAnimationFrames--;
+                        }
+                        
+                        // Aggiorna proiettili del giocatore
+                        playerProjectiles.removeIf(p -> {
+                            return false; 
+                        });
+
+                        // Aggiorna entità e nemici
                         if (currentLevel.getEntities() != null) {
                             for (Entity entity : currentLevel.getEntities()) {
-                                entity.update(model.getPlayer());
+                                if (entity instanceof ShootingEnemy shootingEnemy) {
+                                    shootingEnemy.update(model.getPlayer(), currentLevel.getMap());
+                                } else {
+                                    entity.update(model.getPlayer());
+                                }
                             }
                         }
                     }
@@ -78,6 +102,7 @@ public class GamePanel extends JPanel {
                 repaint();
             }
         });
+        
         this.gameLoop.start();
 
         this.addMouseListener(new MouseAdapter() {
@@ -92,37 +117,80 @@ public class GamePanel extends JPanel {
                         repaint();
                     }
                 } else if (currentState == GameState.PLAYING && e.getButton() == MouseEvent.BUTTON1) {
-                    // UTILIZZO DELL'OGGETTO CON IL CLICK SINISTRO
                     if (model != null && model.getPlayer() != null) {
                         Player player = model.getPlayer();
-                        List<String> allItems = player.getInventory().getCollectedItems();
-                        List<String> usableItems = new ArrayList<>();
-                        for (String item : allItems) {
-                            if (!item.equals("COIN")) {
+                        Level currentLevel = model.getCurrentWorld().getLevels().get(selectedLevelIndex);
+                        List<ItemInstance> allItems = player.getInventory().getItems();
+                        List<ItemInstance> usableItems = new ArrayList<>();
+                        
+                        for (ItemInstance item : allItems) {
+                            if (!item.getType().equals("COIN")) {
                                 usableItems.add(item);
                                 if (usableItems.size() == 4) break;
                             }
                         }
 
-                        // Se lo slot selezionato è tra 0 e 3 e contiene un oggetto
                         if (selectedSlot < 4 && selectedSlot < usableItems.size()) {
-                            String itemToUse = usableItems.get(selectedSlot);
-                            if (itemToUse.equals("POTION")) {
+                            ItemInstance activeItem = usableItems.get(selectedSlot);
+                            
+                            if (activeItem.getType().equals("POTION")) {
                                 if (player.getHealth() < player.getMaxHealth()) {
                                     player.setHealth(Math.min(player.getMaxHealth(), player.getHealth() + 25));
-                                    allItems.remove("POTION"); // Consuma la pozione
+                                    allItems.remove(activeItem);
                                     repaint();
                                 }
-                            } else if (itemToUse.equals("SWORD") || itemToUse.equals("GUN")) {
-                                allItems.remove(itemToUse); // Consuma/usa l'oggetto
+                            } else if (activeItem.getType().equals("SWORD")) {
+                                activeItem.use(); // Scala un utilizzo
+                                
+                                // Attiva l'animazione della spada per 10 fotogrammi
+                                swordAnimationFrames = 10; 
+                                
+                             // EFFETTO SPADA: Controlla i nemici vicini e li uccide (rimuovendoli)
+                                if (currentLevel.getEntities() != null) {
+                                    currentLevel.getEntities().removeIf(entity -> {
+                                        if (entity instanceof Enemy || entity instanceof ShootingEnemy) {
+                                            int slashWidth = 30;  // Larghezza del fendente
+                                            int slashHeight = 12; // Altezza ridotta (orizzontale)
+                                            int slashX = (int) player.getPosition().getX() + GameStruct.TILE_SIZE;
+                                            int slashY = (int) player.getPosition().getY() + (GameStruct.TILE_SIZE / 2) - (slashHeight / 2);
+                                            
+                                            java.awt.Rectangle swordRange = new java.awt.Rectangle(slashX, slashY, slashWidth, slashHeight);
+                                            return swordRange.intersects(entity.getBoundingBox());
+                                        }
+                                        return false;
+                                    });
+                                }
+                                
+                                if (activeItem.isBroken()) {
+                                    allItems.remove(activeItem);
+                                }
+                                repaint();
+                                
+                            } else if (activeItem.getType().equals("GUN")) {
+                                activeItem.use(); // Scala un utilizzo
+                                
+                                double pX = player.getPosition().getX();
+                                double pY = player.getPosition().getY();
+                                Projectile bullet = new Projectile(
+                                    pX + GameStruct.TILE_SIZE, 
+                                    pY + (GameStruct.TILE_SIZE / 2.0), 
+                                    pX + GameStruct.TILE_SIZE + 100, 
+                                    pY + (GameStruct.TILE_SIZE / 2.0), 
+                                    8.0 
+                                );  
+                                playerProjectiles.add(bullet);
+                                
+                                if (activeItem.isBroken()) {
+                                    allItems.remove(activeItem);
+                                }
                                 repaint();
                             }
                         }
-                        // Lo slot 4 è quello vuoto di sicurezza: non fa nulla!
                     }
                 }
             }
         });
+        
         this.addMouseMotionListener(new MouseMotionAdapter() {
             @Override
             public void mouseMoved(MouseEvent e) {
@@ -141,12 +209,10 @@ public class GamePanel extends JPanel {
             }
         });
 
-        // --- AGGIUNGI QUESTO BLOCCO QUI PER LA ROTELLA DEL MOUSE ---
         this.addMouseWheelListener(e -> {
             int notches = e.getWheelRotation();
             selectedSlot += notches;
             
-            // Ciclo tra i 5 slot (0, 1, 2, 3, 4)
             if (selectedSlot > 4) {
                 selectedSlot = 0;
             } else if (selectedSlot < 0) {
@@ -200,16 +266,11 @@ public class GamePanel extends JPanel {
     public void restartCurrentLevel() {
         if (model != null && model.getCurrentWorld() != null && !model.getCurrentWorld().getLevels().isEmpty()) {
             Level currentLevel = model.getCurrentWorld().getLevels().get(selectedLevelIndex);
+            currentLevel.resetLevel(); 
             
-            // 1. Resetta le entità, gli oggetti e lo stato del livello corrente
-            currentLevel.resetLevel(); // <-- ORA RICARICA OGGETTI E NEMICI CORRETTAMENTE!
-            
-            // 2. Svuota l'inventario del giocatore
             if (model.getPlayer() != null && model.getPlayer().getInventory() != null) {
                 model.getPlayer().getInventory().getCollectedItems().clear();
             }
-            
-            // 3. Resetta posizione, velocità e vita del giocatore
             resetPlayerPosition();
         }
     }
@@ -265,5 +326,14 @@ public class GamePanel extends JPanel {
     
     public int getSelectedSlot() { 
         return selectedSlot; 
+    }
+    
+    public List<Projectile> getPlayerProjectiles() {
+        return playerProjectiles;
+    }
+    
+    // Metodo getter per leggere lo stato dell'animazione della spada
+    public int getSwordAnimationFrames() {
+        return swordAnimationFrames;
     }
 }

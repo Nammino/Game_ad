@@ -39,9 +39,9 @@ public class PlayingPanel {
 
         if (player == null || map == null || map.isEmpty()) return;
 
-     // --- CONTROLLO MORTE / RESET ---
+        // --- CONTROLLO MORTE / RESET ---
         if (player.getHealth() <= 0) {
-            panel.restartCurrentLevel(); // <-- Usa il reset completo anche alla morte
+            panel.restartCurrentLevel(); 
             return;
         }
 
@@ -54,16 +54,13 @@ public class PlayingPanel {
         int cameraX = (int) Math.round(playerX - (panelWidth / 2.0) + (tileSize / 2.0));
         int cameraY = (int) Math.round(playerY - (panelHeight / 2.0) + (tileSize / 2.0));
 
-        // Limiti orizzontali
         if (cameraX < 0) cameraX = 0;
         int maxMapWidth = map.get(0).length() * tileSize;
         if (cameraX > maxMapWidth - panelWidth) {
             cameraX = Math.max(0, maxMapWidth - panelWidth);
         }
 
-        // --- LIMITI VERTICALI STABILI ---
         int maxMapHeight = map.size() * tileSize;
-        
         if (maxMapHeight <= panelHeight) {
             cameraY = 0;
         } else {
@@ -74,6 +71,27 @@ public class PlayingPanel {
         }
 
         g2.translate(-cameraX, -cameraY);
+
+     // --- CONTROLLO COLLISIONE CONTINUA ANIMAZIONE SPADA ---
+        if (panel instanceof GamePanel) {
+            GamePanel gp = (GamePanel) panel;
+            if (gp.getSwordAnimationFrames() > 0) {
+                if (level.getEntities() != null) {
+                    level.getEntities().removeIf(entity -> {
+                        if (entity instanceof Enemy || entity instanceof ShootingEnemy) {
+                            int slashWidth = 30;
+                            int slashHeight = 12;
+                            int slashX = (int) player.getPosition().getX() + tileSize;
+                            int slashY = (int) player.getPosition().getY() + (tileSize / 2) - (slashHeight / 2);
+                            
+                            java.awt.Rectangle swordRange = new java.awt.Rectangle(slashX, slashY, slashWidth, slashHeight);
+                            return swordRange.intersects(entity.getBoundingBox());
+                        }
+                        return false;
+                    });
+                }
+            }
+        }
 
         // Disegno Mappa
         for (int row = 0; row < map.size(); row++) {
@@ -218,6 +236,66 @@ public class PlayingPanel {
             tileSize
         );
 
+     // --- DISEGNO ANIMAZIONE / FENDENTE SPADA ---
+        if (panel instanceof GamePanel) {
+            GamePanel gp = (GamePanel) panel;
+            if (gp.getSwordAnimationFrames() > 0) {
+                g2.setColor(new Color(255, 255, 255, 220)); // Bianco luminoso semi-trasparente
+                int slashWidth = 30;
+                int slashHeight = 12;
+                int slashX = (int) player.getPosition().getX() + tileSize;
+                int slashY = (int) player.getPosition().getY() + (tileSize / 2) - (slashHeight / 2);
+                
+                g2.fillRect(slashX, slashY, slashWidth, slashHeight); 
+            }
+        }
+
+     // --- DISEGNO PROIettili DEL GIOCATORE ---
+        g2.setColor(Color.ORANGE);
+        if (panel instanceof GamePanel) {
+            GamePanel gp = (GamePanel) panel;
+            if (gp.getPlayerProjectiles() != null) {
+                List<Projectile> toRemove = new ArrayList<>();
+                for (Projectile p : gp.getPlayerProjectiles()) {
+                    p.getPosition().setX(p.getPosition().getX() + 6);
+                    
+                    int px = (int) Math.round(p.getPosition().getX());
+                    int py = (int) Math.round(p.getPosition().getY());
+                    g2.fillOval(px, py, 10, 10);
+                    
+                    // --- 1. CONTROLLO COLLISIONE CON LE STRUTTURE DELLA MAPPA (es. '#') ---
+                    int tileCol = px / tileSize;
+                    int tileRow = py / tileSize;
+                    
+                    if (tileRow >= 0 && tileRow < map.size() && tileCol >= 0 && tileCol < map.get(tileRow).length()) {
+                        char tileChar = map.get(tileRow).charAt(tileCol);
+                        if (tileChar == '#') { // Se colpisce un muro/struttura
+                            toRemove.add(p);
+                            continue; // Salta il resto del ciclo per questo proiettile
+                        }
+                    } else {
+                        // Se esce completamente dai confini della mappa
+                        toRemove.add(p);
+                        continue;
+                    }
+                    
+                    // --- 2. CONTROLLO COLLISIONE CON I NEMICI ---
+                    if (level.getEntities() != null) {
+                        level.getEntities().removeIf(entity -> {
+                            if (entity instanceof Enemy || entity instanceof ShootingEnemy) {
+                                if (new java.awt.Rectangle(px, py, 10, 10).intersects(entity.getBoundingBox())) {
+                                    toRemove.add(p);
+                                    return true; // Rimuove il nemico
+                                }
+                            }
+                            return false;
+                        });
+                    }
+                }
+                gp.getPlayerProjectiles().removeAll(toRemove);
+            }
+        }
+
         // --- RIPRISTINO CAMERA PER L'HUD E I MESSAGGI FISSI ---
         g2.translate(cameraX, cameraY);
 
@@ -244,12 +322,12 @@ public class PlayingPanel {
         g2.setFont(new Font("Arial", Font.BOLD, 11));
         g2.drawString("HP: " + player.getHealth() + " / " + player.getMaxHealth(), barX + 50, barY + 14);
 
-        // --- MINI INVENTARIO IN BASSO A SINISTRA (5 slot totali: 4 oggetti + 1 vuoto di sicurezza) ---
-        List<String> allItems = player.getInventory().getCollectedItems();
-        List<String> usableItems = new ArrayList<>();
+        // --- MINI INVENTARIO IN BASSO A SINISTRA ---
+        List<model.ItemInstance> allItems = player.getInventory().getItems();
+        List<model.ItemInstance> usableItems = new ArrayList<>();
         
-        for (String item : allItems) {
-            if (!item.equals("COIN")) {
+        for (model.ItemInstance item : allItems) {
+            if (!item.getType().equals("COIN")) {
                 usableItems.add(item);
                 if (usableItems.size() == 4) break; 
             }
@@ -263,7 +341,7 @@ public class PlayingPanel {
         java.awt.Stroke originalStroke = g2.getStroke();
 
         g2.setFont(new Font("Arial", Font.BOLD, 10));
-        for (int i = 0; i < 5; i++) { // Disegniamo 5 slot fissi (il 5° è sempre vuoto)
+        for (int i = 0; i < 5; i++) { 
             int currentX = miniInvX + i * (slotSize + slotSpacing);
             
             boolean isSelected = (i == panel.getSelectedSlot());
@@ -286,9 +364,9 @@ public class PlayingPanel {
 
             g2.setStroke(originalStroke);
 
-            // Disegna l'oggetto solo se rientra nei primi 4 slot ed esiste nell'inventario
             if (i < 4 && i < usableItems.size()) {
-                String itemType = usableItems.get(i);
+                model.ItemInstance itemInst = usableItems.get(i);
+                String itemType = itemInst.getType();
                 
                 if (itemType.equals("POTION")) {
                     g2.setColor(Color.PINK);
@@ -301,14 +379,20 @@ public class PlayingPanel {
                 g2.fillRect(currentX + 8, miniInvY + 8, slotSize - 16, slotSize - 16);
                 g2.setColor(Color.BLACK);
                 g2.drawRect(currentX + 8, miniInvY + 8, slotSize - 16, slotSize - 16);
+                
+                if (!itemType.equals("POTION")) {
+                    g2.setColor(Color.YELLOW);
+                    g2.setFont(new Font("Arial", Font.BOLD, 10));
+                    g2.drawString("x" + itemInst.getUsesLeft(), currentX + 5, miniInvY + slotSize - 4);
+                }
             }
             
-            // Numero dello slot (da 1 a 5)
             g2.setColor(Color.WHITE);
+            g2.setFont(new Font("Arial", Font.BOLD, 10));
             g2.drawString("" + (i + 1), currentX + 4, miniInvY + 12);
         }
 
-        // --- SCHERMATA / SCRITTA DI VITTORIA SE IL LIVELLO È COMPLETATO ---
+        // --- SCHERMATA DI VITTORIA ---
         if (level.isCompleted()) {
             g2.setColor(new Color(0, 0, 0, 150));
             g2.fillRect(0, 0, panelWidth, panelHeight);

@@ -4,31 +4,46 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Inventory {
-    private List<String> collectedItems; 
+    private List<ItemInstance> items; 
 
     public Inventory() {
-        this.collectedItems = new ArrayList<>();
+        this.items = new ArrayList<>();
     }
 
     public void addItem(String itemName) {
-        this.collectedItems.add(itemName);
+        this.items.add(new ItemInstance(itemName));
     }
 
-    // --- METODI UTILI AGGIUNTIVI ---
     public boolean hasItem(String itemName) {
-        return collectedItems.contains(itemName);
+        for (ItemInstance item : items) {
+            if (item.getType().equals(itemName)) return true;
+        }
+        return false;
     }
 
     public void removeItem(String itemName) {
-        collectedItems.remove(itemName);
+        for (int i = 0; i < items.size(); i++) {
+            if (items.get(i).getType().equals(itemName)) {
+                items.remove(i);
+                break;
+            }
+        }
     }
-    // --------------------------------
 
+    public List<ItemInstance> getItems() {
+        return items;
+    }
+
+    // Mantenuto per compatibilità se serve altrove
     public List<String> getCollectedItems() {
-        return collectedItems;
+        List<String> simpleList = new ArrayList<>();
+        for (ItemInstance item : items) {
+            simpleList.add(item.getType());
+        }
+        return simpleList;
     }
 
     public void clear() {
-        collectedItems.clear();
+        items.clear();
     }
 }

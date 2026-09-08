@@ -40,8 +40,10 @@ public class ShootingEnemy implements Entity {
         return activeProjectiles;
     }
 
-    @Override
-    public void update(Player player) {
+ // Aggiungi un overload o modifica il ciclo di aggiornamento dei proiettili dentro update(Player player):
+    // Nota: se vuoi passare la mappa, puoi aggiungere un metodo update(Player player, ArrayList<String> map):
+    
+    public void update(Player player, ArrayList<String> map) {
         if (player == null) return;
 
         // Danno da contatto fisico se il player gli va addosso
@@ -77,10 +79,16 @@ public class ShootingEnemy implements Entity {
             }
         }
 
-        // Aggiorna e pulisce i proiettili sparati
+        // Aggiorna e pulisce i proiettili sparati passando la mappa
         activeProjectiles.removeIf(p -> !p.isActive());
         for (Projectile p : activeProjectiles) {
-            p.update(player);
+            p.update(player, map);
         }
+    }
+
+    @Override
+    public void update(Player player) {
+        // Metodo di fallback dell'interfaccia Entity
+        update(player, null);
     }
 }
