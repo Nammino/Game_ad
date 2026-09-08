@@ -13,6 +13,9 @@ public class InventoryPanel {
 
     private BufferedImage potionImg;
     private BufferedImage coinImg;
+    
+    // Gestione dello scorrimento in pixel
+    private int scrollOffset = 0;
 
     public InventoryPanel() {
         try {
@@ -64,45 +67,85 @@ public class InventoryPanel {
             int emptyWidth = g2.getFontMetrics().stringWidth(emptyMsg);
             g2.drawString(emptyMsg, (panelWidth - emptyWidth) / 2, boxY + (boxHeight / 2));
         } else {
-            // Mostra gli oggetti raccolti con i relativi sprite
             int startX = boxX + 30;
-            int startY = boxY + 50;
-            int spacing = 35;
+            int startY = boxY + 45;
+            int spacing = 40; // Spazio verticale per ogni riga
+            
+            // Calcolo altezza totale del contenuto e limiti di scorrimento in pixel
+            int totalContentHeight = items.size() * spacing;
+            int visibleAreaHeight = boxHeight - 60;
+            int maxScroll = Math.max(0, totalContentHeight - visibleAreaHeight);
+
+            // Validazione dei limiti dello scroll
+            if (scrollOffset > maxScroll) scrollOffset = maxScroll;
+            if (scrollOffset < 0) scrollOffset = 0;
+
+            // --- AREA DI CLIP: Taglia tutto ciò che esce dal box ---
+            java.awt.Shape oldClip = g2.getClip();
+            g2.setClip(boxX + 10, boxY + 10, boxWidth - 20, boxHeight - 20);
 
             for (int i = 0; i < items.size(); i++) {
                 String itemName = items.get(i);
                 
-                // Sfondo della riga dell'oggetto
-                g2.setColor(new Color(60, 60, 80));
-                g2.fillRect(startX, startY + (i * spacing) - 20, boxWidth - 60, 30);
+                // Posizione Y calcolata sottraendo i pixel dello scroll
+                int currentY = startY + (i * spacing) - scrollOffset;
 
-                // Determiniamo quale immagine/sprite disegnare in base al tipo di oggetto
-                BufferedImage itemSprite = null;
-                if (itemName.startsWith("POTION")) {
-                    itemSprite = potionImg;
-                } else if (itemName.startsWith("COIN")) {
-                    itemSprite = coinImg;
+                // Disegna la riga solo se rientra nell'area visibile del riquadro
+                if (currentY + 30 >= boxY + 15 && currentY <= boxY + boxHeight - 15) {
+                    // Sfondo della riga dell'oggetto
+                    g2.setColor(new Color(60, 60, 80));
+                    g2.fillRect(startX, currentY, boxWidth - 60, 32);
+
+                    BufferedImage itemSprite = null;
+                    if (itemName.startsWith("POTION")) {
+                        itemSprite = potionImg;
+                    } else if (itemName.startsWith("COIN")) {
+                        itemSprite = coinImg;
+                    }
+
+                    int textOffset = startX + 15;
+                    if (itemSprite != null) {
+                        g2.drawImage(itemSprite, startX + 10, currentY + 4, 24, 24, null);
+                        textOffset = startX + 45; 
+                    }
+
+                    g2.setColor(Color.YELLOW);
+                    g2.setFont(new Font("Arial", Font.BOLD, 15));
+                    g2.drawString("• " + itemName + " #" + (i + 1), textOffset, currentY + 22);
                 }
+            }
 
-                // Se lo sprite esiste lo disegniamo a sinistra del testo
-                int textOffset = startX + 15;
-                if (itemSprite != null) {
-                    g2.drawImage(itemSprite, startX + 10, startY + (i * spacing) - 16, 22, 22, null);
-                    textOffset = startX + 40; // Spostiamo il testo a destra per fare spazio allo sprite
-                }
+            // Ripristina il clip grafico originale
+            g2.setClip(oldClip);
 
-                // Nome dell'oggetto e numero
-                g2.setColor(Color.YELLOW);
-                g2.setFont(new Font("Arial", Font.BOLD, 15));
-                g2.drawString("• " + itemName + " #" + (i + 1), textOffset, startY + (i * spacing));
+            // --- DISEGNO DELLA BARRA DI SCORRIMENTO (SCROLLBAR) ---
+            if (totalContentHeight > visibleAreaHeight) {
+                int scrollBarWidth = 6;
+                int scrollBarHeight = boxHeight - 40;
+                int scrollBarX = boxX + boxWidth - 15;
+                int scrollBarY = boxY + 20;
+
+                g2.setColor(new Color(30, 30, 40));
+                g2.fillRect(scrollBarX, scrollBarY, scrollBarWidth, scrollBarHeight);
+
+                int thumbHeight = Math.max(30, (scrollBarHeight * visibleAreaHeight) / totalContentHeight);
+                int maxThumbTravel = scrollBarHeight - thumbHeight;
+                int thumbY = scrollBarY + (maxScroll > 0 ? (scrollOffset * maxThumbTravel) / maxScroll : 0);
+
+                g2.setColor(new Color(150, 150, 200));
+                g2.fillRoundRect(scrollBarX, thumbY, scrollBarWidth, thumbHeight, 4, 4);
             }
         }
 
         // Istruzioni in basso
         g2.setColor(Color.LIGHT_GRAY);
         g2.setFont(new Font("Arial", Font.BOLD, 14));
-        String footer = "Premi I o ESC per tornare al gioco";
+        String footer = "Usa la Rotellina per scorrere | Premi I o ESC per tornare al gioco";
         int footerWidth = g2.getFontMetrics().stringWidth(footer);
         g2.drawString(footer, (panelWidth - footerWidth) / 2, boxY + boxHeight + 40);
+    }
+
+    public void handleWheel(int delta) {
+        scrollOffset += delta;
     }
 }

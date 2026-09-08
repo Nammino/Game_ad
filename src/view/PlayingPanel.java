@@ -5,8 +5,6 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
-import javax.imageio.ImageIO;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,22 +25,27 @@ public class PlayingPanel {
     private BufferedImage potionImg;
     private BufferedImage coinImg;
     
-    // Dichiarazione delle due immagini per il giocatore (Destra e Sinistra)
+    // Immagini Giocatore
     private BufferedImage boyRightImg;
     private BufferedImage boyLeftImg;
     
-    // Sprite dell'orco e della roccia
+    // Sprite Nemici e proiettili
     private BufferedImage orcRightImg;
     private BufferedImage orcLeftImg;
     private BufferedImage rockImg;
     
-    // Sprite per la spada, l'arco e le frecce direzionali
+    // Sprite Armi
     private BufferedImage swordRightImg;
     private BufferedImage swordLeftImg;
     private BufferedImage bowRightImg;
     private BufferedImage bowLeftImg;
     private BufferedImage arrowRightImg;
     private BufferedImage arrowLeftImg;
+
+    // Sprite Oggetti Neutri
+    private BufferedImage treeImg;
+    private BufferedImage neutralRockImg;
+    private BufferedImage bushImg;
 
     public PlayingPanel() {
         try {
@@ -52,17 +55,12 @@ public class PlayingPanel {
             java.io.InputStream isCoin = getClass().getResourceAsStream("/sprite/coin_bronze.png");
             if (isCoin != null) coinImg = javax.imageio.ImageIO.read(isCoin);
 
-            // Caricamento sprite Player verso DESTRA
             java.io.InputStream isBoyR = getClass().getResourceAsStream("/sprite/boy_right_1.png");
             if (isBoyR != null) boyRightImg = javax.imageio.ImageIO.read(isBoyR);
-            else System.err.println("ATTENZIONE: Impossibile trovare boy_right_1.png");
 
-            // Caricamento sprite Player verso SINISTRA
             java.io.InputStream isBoyL = getClass().getResourceAsStream("/sprite/boy_left_1.png");
             if (isBoyL != null) boyLeftImg = javax.imageio.ImageIO.read(isBoyL);
-            else System.err.println("ATTENZIONE: Impossibile trovare boy_left_1.png");
             
-            // Caricamento sprite Orco
             java.io.InputStream isOrcR = getClass().getResourceAsStream("/sprite/orc_right_1.png");
             if (isOrcR != null) orcRightImg = javax.imageio.ImageIO.read(isOrcR);
 
@@ -72,31 +70,33 @@ public class PlayingPanel {
             java.io.InputStream isRock = getClass().getResourceAsStream("/sprite/rock_down_1.png");
             if (isRock != null) rockImg = javax.imageio.ImageIO.read(isRock);
             
-            // Caricamento sprite Spada verso DESTRA
             java.io.InputStream isSwordR = getClass().getResourceAsStream("/sprite/sword_right.png");
             if (isSwordR != null) swordRightImg = javax.imageio.ImageIO.read(isSwordR);
 
-            // Caricamento sprite Spada verso SINISTRA
             java.io.InputStream isSwordL = getClass().getResourceAsStream("/sprite/sword_left.png");
             if (isSwordL != null) swordLeftImg = javax.imageio.ImageIO.read(isSwordL);
 
-            // Caricamento sprite Arco verso DESTRA
             java.io.InputStream isBowR = getClass().getResourceAsStream("/sprite/bow_right.png");
             if (isBowR != null) bowRightImg = javax.imageio.ImageIO.read(isBowR);
-            else System.err.println("ATTENZIONE: Impossibile trovare bow_right.png");
 
-            // Caricamento sprite Arco verso SINISTRA
             java.io.InputStream isBowL = getClass().getResourceAsStream("/sprite/bow_left.png");
             if (isBowL != null) bowLeftImg = javax.imageio.ImageIO.read(isBowL);
-            else System.err.println("ATTENZIONE: Impossibile trovare bow_left.png");
 
-            // Caricamento sprite Freccia verso DESTRA
             java.io.InputStream isArrowR = getClass().getResourceAsStream("/sprite/arrow_right.png");
             if (isArrowR != null) arrowRightImg = javax.imageio.ImageIO.read(isArrowR);
 
-            // Caricamento sprite Freccia verso SINISTRA
             java.io.InputStream isArrowL = getClass().getResourceAsStream("/sprite/arrow_left.png");
             if (isArrowL != null) arrowLeftImg = javax.imageio.ImageIO.read(isArrowL);
+
+            // Caricamento Sprite Oggetti Neutri
+            java.io.InputStream isTree = getClass().getResourceAsStream("/sprite/tree.png");
+            if (isTree != null) treeImg = javax.imageio.ImageIO.read(isTree);
+
+            java.io.InputStream isNeutralRock = getClass().getResourceAsStream("/sprite/rock.png");
+            if (isNeutralRock != null) neutralRockImg = javax.imageio.ImageIO.read(isNeutralRock);
+
+            java.io.InputStream isBush = getClass().getResourceAsStream("/sprite/bush.png");
+            if (isBush != null) bushImg = javax.imageio.ImageIO.read(isBush);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -154,10 +154,27 @@ public class PlayingPanel {
 
         g2.translate(-cameraX, -cameraY);
 
+        // --- PREPARAZIONE LISTA OGGETTI USABILI ---
+        List<model.ItemInstance> allItems = player.getInventory().getItems();
+        List<model.ItemInstance> usableItems = new ArrayList<>();
+        
+        for (model.ItemInstance item : allItems) {
+            if (!item.getType().equals("COIN")) {
+                usableItems.add(item);
+                if (usableItems.size() == 4) break; 
+            }
+        }
+
+        int selectedSlot = panel.getSelectedSlot();
+        String activeItemType = "";
+        if (selectedSlot >= 0 && selectedSlot < usableItems.size()) {
+            activeItemType = usableItems.get(selectedSlot).getType();
+        }
+
         // --- CONTROLLO COLLISIONE CONTINUA ANIMAZIONE SPADA ---
         if (panel instanceof GamePanel) {
             GamePanel gp = (GamePanel) panel;
-            if (gp.getSwordAnimationFrames() > 0) {
+            if (gp.getSwordAnimationFrames() > 0 && activeItemType.equals("SWORD")) {
                 if (level.getEntities() != null) {
                     level.getEntities().removeIf(entity -> {
                         if (entity instanceof Enemy || entity instanceof ShootingEnemy) {
@@ -208,16 +225,51 @@ public class PlayingPanel {
         // --- DISEGNO E GESTIONE DELLE ENTITÀ ---
         if (level.getEntities() != null) {
             
-            // 1. Oggetti Neutri
+            // 1. Oggetti Neutri (Albero raddoppiato rispetto a prima, Roccia rimpicciolita, Cespuglio inviato prima)
             for (Entity entity : level.getEntities()) {
                 if (entity instanceof NeutralObject neutral) {
                     int nx = (int) Math.round(neutral.getPosition().getX());
                     int ny = (int) Math.round(neutral.getPosition().getY());
 
-                    g2.setColor(new Color(120, 120, 120, 160));
-                    g2.fillRect(nx, ny, tileSize, tileSize);
-                    g2.setColor(Color.DARK_GRAY);
-                    g2.drawRect(nx, ny, tileSize, tileSize);
+                    BufferedImage neutralImg = null;
+                    String nType = neutral.getType();
+                    
+                    int drawWidth = tileSize;
+                    int drawHeight = tileSize;
+                    int drawX = nx;
+                    int drawY = ny;
+
+                    if ("TREE".equals(nType)) {
+                        neutralImg = treeImg;
+                        // Albero ingrandito del doppio rispetto alla misura standard precedente (4 volte la tile)
+                        drawWidth = tileSize * 4;
+                        drawHeight = tileSize * 4;
+                        drawX = nx - tileSize * 3 / 2; 
+                        drawY = ny - tileSize * 3;     
+                    } else if ("ROCK".equals(nType)) {
+                        neutralImg = neutralRockImg;
+                        // Roccia rimpicciolita (50% della tile)
+                        drawWidth = (int) (tileSize * 0.5);
+                        drawHeight = (int) (tileSize * 0.5);
+                        drawX = nx + (tileSize - drawWidth) / 2;
+                        drawY = ny + (tileSize - drawHeight);
+                    } else if ("BUSH".equals(nType)) {
+                        neutralImg = bushImg;
+                        // Cespuglio invariato (2 volte la tile)
+                        drawWidth = tileSize * 2;
+                        drawHeight = tileSize * 2;
+                        drawX = nx - tileSize / 2;
+                        drawY = ny - tileSize;
+                    }
+
+                    if (neutralImg != null) {
+                        g2.drawImage(neutralImg, drawX, drawY, drawWidth, drawHeight, null);
+                    } else {
+                        g2.setColor(new Color(120, 120, 120, 160));
+                        g2.fillRect(nx, ny, tileSize, tileSize);
+                        g2.setColor(Color.DARK_GRAY);
+                        g2.drawRect(nx, ny, tileSize, tileSize);
+                    }
                 }
             }
 
@@ -238,7 +290,7 @@ public class PlayingPanel {
                         } else if (col.getItemType().equals("SWORD")) {
                             itemImg = swordRightImg;
                         } else if (col.getItemType().equals("GUN")) {
-                            itemImg = bowRightImg; // Mostra l'arco a terra
+                            itemImg = bowRightImg; 
                         }
 
                         if (itemImg != null) {
@@ -338,7 +390,7 @@ public class PlayingPanel {
             }
         }
 
-        // --- Disegno Giocatore con Sprite Direzionale Corretto ---
+        // --- Disegno Giocatore ---
         int px = (int) Math.round(player.getPosition().getX());
         int py = (int) Math.round(player.getPosition().getY());
         
@@ -351,43 +403,36 @@ public class PlayingPanel {
             g2.fillRect(px, py, tileSize, tileSize);
         }
 
-        // --- DISEGNO ANIMAZIONE / SPRITE SPADA DIREZIONALE ---
+        // --- ANIMAZIONE SPADA ---
         if (panel instanceof GamePanel) {
             GamePanel gp = (GamePanel) panel;
-            if (gp.getSwordAnimationFrames() > 0) {
+            if (gp.getSwordAnimationFrames() > 0 && activeItemType.equals("SWORD")) {
                 int swordW = tileSize;
                 int swordH = tileSize;
                 
                 BufferedImage currentSwordImg = player.isFacingRight() ? swordRightImg : swordLeftImg;
-                
                 int swordX = player.isFacingRight() ? 
                     (int) player.getPosition().getX() + tileSize : 
                     (int) player.getPosition().getX() - swordW;
-                    
                 int swordY = (int) player.getPosition().getY();
                 
                 if (currentSwordImg != null) {
                     g2.drawImage(currentSwordImg, swordX, swordY, swordW, swordH, null);
-                } else {
-                    g2.setColor(new Color(255, 255, 255, 220));
-                    g2.fillRect(swordX, swordY + 12, 30, 12); 
                 }
             }
         }
 
-        // --- DISEGNO ANIMAZIONE / SPRITE ARCO DIREZIONALE ---
+        // --- ANIMAZIONE ARCO ---
         if (panel instanceof GamePanel) {
             GamePanel gp = (GamePanel) panel;
-            if (gp.getBowAnimationFrames() > 0) {
+            if (gp.getBowAnimationFrames() > 0 && activeItemType.equals("GUN")) {
                 int bowW = tileSize;
                 int bowH = tileSize;
                 
                 BufferedImage currentBowImg = player.isFacingRight() ? bowRightImg : bowLeftImg;
-                
                 int bowX = player.isFacingRight() ? 
                     (int) player.getPosition().getX() + tileSize : 
                     (int) player.getPosition().getX() - bowW;
-                    
                 int bowY = (int) player.getPosition().getY();
                 
                 if (currentBowImg != null) {
@@ -396,10 +441,9 @@ public class PlayingPanel {
             }
         }
 
-        // --- GESTIONE E DISEGNO FRECCE DEL GIOCATORE IN VOLO ---
+        // --- FRECCE DEL GIOCATORE IN VOLO ---
         if (panel instanceof GamePanel) {
             GamePanel gp = (GamePanel) panel;
-            
             if (gp.getPlayerProjectiles() != null) {
                 List<Projectile> toRemove = new ArrayList<>();
                 for (Projectile p : gp.getPlayerProjectiles()) {
@@ -408,13 +452,11 @@ public class PlayingPanel {
                     int prx = (int) Math.round(p.getPosition().getX());
                     int pry = (int) Math.round(p.getPosition().getY());
                     
-                    // Disegna lo sprite della freccia in base alla direzione (evita le palline gialle)
-                    BufferedImage currentArrowImg = (p.getSpeedX() > 0) ? arrowRightImg : arrowLeftImg;
+                    BufferedImage currentArrowImg = (p.getSpeedX() >= 0) ? arrowRightImg : arrowLeftImg;
                     
                     if (currentArrowImg != null) {
                         g2.drawImage(currentArrowImg, prx, pry, 24, 12, null);
                     } else {
-                        // Fallback se le immagini delle frecce non sono caricate
                         g2.setColor(new Color(200, 150, 50));
                         g2.fillRect(prx, pry, 16, 6);
                     }
@@ -449,7 +491,7 @@ public class PlayingPanel {
             }
         }
 
-        // --- RIPRISTINO CAMERA PER L'HUD E I MESSAGGI FISSI ---
+        // --- RIPRISTINO CAMERA PER L'HUD ---
         g2.translate(cameraX, cameraY);
 
         // --- HUD / BARRA VITA ---
@@ -475,17 +517,7 @@ public class PlayingPanel {
         g2.setFont(new Font("Arial", Font.BOLD, 11));
         g2.drawString("HP: " + player.getHealth() + " / " + player.getMaxHealth(), barX + 50, barY + 14);
 
-        // --- MINI INVENTARIO IN BASSO A SINISTRA CON SPRITE ---
-        List<model.ItemInstance> allItems = player.getInventory().getItems();
-        List<model.ItemInstance> usableItems = new ArrayList<>();
-        
-        for (model.ItemInstance item : allItems) {
-            if (!item.getType().equals("COIN")) {
-                usableItems.add(item);
-                if (usableItems.size() == 4) break; 
-            }
-        }
-
+        // --- MINI INVENTARIO ---
         int slotSize = 40;
         int slotSpacing = 10;
         int miniInvX = 20;
@@ -496,7 +528,6 @@ public class PlayingPanel {
         g2.setFont(new Font("Arial", Font.BOLD, 10));
         for (int i = 0; i < 5; i++) { 
             int currentX = miniInvX + i * (slotSize + slotSpacing);
-            
             boolean isSelected = (i == panel.getSelectedSlot());
 
             if (isSelected) {
@@ -514,7 +545,6 @@ public class PlayingPanel {
                 g2.setStroke(new BasicStroke(1.0f)); 
             }
             g2.drawRect(currentX, miniInvY, slotSize, slotSize);
-
             g2.setStroke(originalStroke);
 
             if (i < 4 && i < usableItems.size()) {
@@ -527,22 +557,11 @@ public class PlayingPanel {
                 } else if (itemType.equals("SWORD")) {
                     slotImg = swordRightImg;
                 } else if (itemType.equals("GUN")) {
-                    slotImg = bowRightImg; // Mostra l'arco nell'inventario
+                    slotImg = bowRightImg; 
                 }
 
                 if (slotImg != null) {
                     g2.drawImage(slotImg, currentX + 4, miniInvY + 4, slotSize - 8, slotSize - 8, null);
-                } else {
-                    if (itemType.equals("POTION")) {
-                        g2.setColor(Color.PINK);
-                    } else if (itemType.equals("SWORD")) {
-                        g2.setColor(Color.LIGHT_GRAY);
-                    } else if (itemType.equals("GUN")) {
-                        g2.setColor(Color.BLUE);
-                    }
-                    g2.fillRect(currentX + 8, miniInvY + 8, slotSize - 16, slotSize - 16);
-                    g2.setColor(Color.BLACK);
-                    g2.drawRect(currentX + 8, miniInvY + 8, slotSize - 16, slotSize - 16);
                 }
                 
                 if (!itemType.equals("POTION")) {

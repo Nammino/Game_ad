@@ -8,6 +8,8 @@ import java.util.Random;
 
 public class Enemy implements Entity {
     private Vector2D position;
+    private Vector2D velocity;
+    private boolean grounded = false;
     private int width;
     private int height;
     private BufferedImage sprite;
@@ -16,15 +18,15 @@ public class Enemy implements Entity {
     private double visionRange = 220.0;  
     
     private int wanderTimer = 0;
-    private int currentDirection = 1;     
+    private int currentDirection = 1;      
     private Random random = new Random();
 
     public Enemy(double x, double y) {
         this.position = new Vector2D(x, y);
+        this.velocity = new Vector2D(0, 0);
         
         try {
             sprite = ImageIO.read(getClass().getResourceAsStream("/sprite/greenslime_down_1.png"));
-            // Forziamo le dimensioni al TILE_SIZE coerentemente con il rendering ingrandito
             this.width = GameStruct.TILE_SIZE;
             this.height = GameStruct.TILE_SIZE;
         } catch (IOException | IllegalArgumentException e) {
@@ -43,8 +45,22 @@ public class Enemy implements Entity {
     }
 
     @Override
+    public Vector2D getVelocity() {
+        return velocity;
+    }
+
+    @Override
+    public boolean isGrounded() {
+        return grounded;
+    }
+
+    @Override
+    public void setGrounded(boolean grounded) {
+        this.grounded = grounded;
+    }
+
+    @Override
     public Rectangle getBoundingBox() {
-        // Riduciamo la larghezza dell'hitbox di 10 pixel (5 a destra e 5 a sinistra) per renderla più permissiva
         int shrinkX = 10;
         return new Rectangle(
             (int) position.getX() + (shrinkX / 2), 
@@ -62,6 +78,11 @@ public class Enemy implements Entity {
             player.takeDamage(1); 
         }
 
+        // Gestione gravità di base sull'asse Y
+        if (!grounded) {
+            velocity.setY(velocity.getY() + 0.5); // Forza di gravità
+        }
+
         double playerX = player.getPosition().getX();
         double playerY = player.getPosition().getY();
         
@@ -71,12 +92,11 @@ public class Enemy implements Entity {
 
         if (distance <= visionRange) {
             if (dx > 0) {
-                position.setX(position.getX() + (speed * 1.3));
+                velocity.setX(speed * 1.3);
             } else if (dx < 0) {
-                position.setX(position.getX() - (speed * 1.3));
+                velocity.setX(-speed * 1.3);
             }
-        } 
-        else {
+        } else {
             wanderTimer++;
             if (wanderTimer > 120) {
                 wanderTimer = 0;
@@ -91,7 +111,9 @@ public class Enemy implements Entity {
             }
 
             if (currentDirection != 0) {
-                position.setX(position.getX() + (speed * 0.5 * currentDirection));
+                velocity.setX(speed * 0.5 * currentDirection);
+            } else {
+                velocity.setX(0);
             }
         }
     }

@@ -79,7 +79,7 @@ public class GamePanel extends JPanel {
                         // 1. Aggiorna i calcoli della velocità del player dai comandi
                         model.getPlayer().update(currentLevel.getMap());
                         
-                        // 2. Esegui le collisioni con i tile e aggiorna la posizione in modo sicuro!
+                        // 2. Esegui le collisioni con i tile e aggiorna la posizione in modo sicuro per il player!
                         collisionManager.checkTileCollisions(model.getPlayer(), currentLevel.getMap());
 
                         // Decrementa il contatore dell'animazione della spada ad ogni fotogramma
@@ -87,18 +87,20 @@ public class GamePanel extends JPanel {
                             swordAnimationFrames--;
                         }
                         
-                        // ... (il resto del codice rimane invariato)
-                        
                         // Aggiorna proiettili del giocatore
                         playerProjectiles.removeIf(p -> {
                             return false; 
                         });
 
-                        // Aggiorna entità e nemici
+                        // Aggiorna entità, nemici (Enemy e ShootingEnemy) applicando gravità e collisioni con i tile
                         if (currentLevel.getEntities() != null) {
                             for (Entity entity : currentLevel.getEntities()) {
                                 if (entity instanceof ShootingEnemy shootingEnemy) {
                                     shootingEnemy.update(model.getPlayer(), currentLevel.getMap());
+                                    collisionManager.checkTileCollisions(shootingEnemy, currentLevel.getMap());
+                                } else if (entity instanceof Enemy enemy) {
+                                    enemy.update(model.getPlayer()); // <-- Rimosso currentLevel.getMap() qui dentro
+                                    collisionManager.checkTileCollisions(enemy, currentLevel.getMap());
                                 } else {
                                     entity.update(model.getPlayer());
                                 }
@@ -187,20 +189,21 @@ public class GamePanel extends JPanel {
                                 
                                 double targetX = player.isFacingRight() ? pX + 200 : pX - 200;
                                 double startBulletX = player.isFacingRight() ? pX + GameStruct.TILE_SIZE : pX - 12;
+                                double bulletY = pY + (GameStruct.TILE_SIZE / 4.0);
                                 
                                 Projectile bullet = new Projectile(
-                                    startBulletX, 
-                                    pY + (GameStruct.TILE_SIZE / 2.0), 
-                                    targetX, 
-                                    pY + (GameStruct.TILE_SIZE / 2.0), 
-                                    8.0 
-                                );  
-                                playerProjectiles.add(bullet);
-                                
-                                if (activeItem.isBroken()) {
-                                    allItems.remove(activeItem);
-                                }
-                                repaint();
+                                        startBulletX, 
+                                        bulletY, 
+                                        targetX, 
+                                        bulletY, 
+                                        8.0 
+                                    );  
+                                    playerProjectiles.add(bullet);
+                                    
+                                    if (activeItem.isBroken()) {
+                                        allItems.remove(activeItem);
+                                    }
+                                    repaint();
                             }
                         }
                     }
@@ -226,16 +229,24 @@ public class GamePanel extends JPanel {
             }
         });
 
+        // GESTIONE DELLA ROTELLINA DEL MOUSE (Aggiornata per l'inventario)
         this.addMouseWheelListener(e -> {
             int notches = e.getWheelRotation();
-            selectedSlot += notches;
             
-            if (selectedSlot > 4) {
-                selectedSlot = 0;
-            } else if (selectedSlot < 0) {
-                selectedSlot = 4;
+            if (currentState == GameState.INVENTORY) {
+                // Scorre l'inventario verticalmente in pixel
+                inventoryPanel.handleWheel(notches * 20);
+                repaint();
+            } else {
+                // Comportamento standard per la selezione degli slot rapidi
+                selectedSlot += notches;
+                if (selectedSlot > 4) {
+                    selectedSlot = 0;
+                } else if (selectedSlot < 0) {
+                    selectedSlot = 4;
+                }
+                repaint();
             }
-            repaint();
         });
     }
 
@@ -350,7 +361,6 @@ public class GamePanel extends JPanel {
         return playerProjectiles;
     }
     
-    // Metodo getter per leggere lo stato dell'animazione della spada
     public int getSwordAnimationFrames() {
         return swordAnimationFrames;
     }

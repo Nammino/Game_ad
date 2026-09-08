@@ -35,8 +35,10 @@ public class EntityPlacerImpl implements EntityPlacer {
                         case 'C' -> entities.add(new Collectible(x, y, "POTION")); // Pozione
                         case 'W' -> entities.add(new Collectible(x, y, "SWORD"));  // Spada
                         case 'B' -> entities.add(new Collectible(x, y, "GUN"));    // Arma a distanza
-                        case 'M' -> entities.add(new Collectible(x, y, "COIN"));   // <-- NUOVO: Moneta
-                        case 'N' -> entities.add(new NeutralObject(x, y)); 
+                        case 'M' -> entities.add(new Collectible(x, y, "COIN"));   // Moneta
+                        case 'T', 'N' -> entities.add(new NeutralObject(x, y, "TREE")); // Albero (gestisce sia T che N)
+                        case 'R' -> entities.add(new NeutralObject(x, y, "ROCK")); // Roccia neutra
+                        case 'U' -> entities.add(new NeutralObject(x, y, "BUSH")); // Cespuglio
                     }
                 }
                 row++;

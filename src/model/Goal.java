@@ -28,4 +28,19 @@ public class Goal implements Entity {
     public void update(Player player) {
         // I traguardi sono immobili, non fanno nulla
     }
+
+    @Override
+    public Vector2D getVelocity() {
+        return new Vector2D(0, 0);
+    }
+
+    @Override
+    public boolean isGrounded() {
+        return true;
+    }
+
+    @Override
+    public void setGrounded(boolean grounded) {
+        // Non soggetto a gravità
+    }
 }
