@@ -4,13 +4,19 @@ import java.awt.Rectangle;
 
 public class Collectible extends Object {
     private boolean collected = false;
-    private String itemType; // TIPO DI OGGETTO (es. "POTION", "SWORD", "GUN")
+    private String itemType; 
 
     public Collectible(double x, double y, String itemType) {
         super();
         getPosition().setX(x);
         getPosition().setY(y);
-        getBoundingBox().setBounds((int) x, (int) y, GameStruct.TILE_SIZE, GameStruct.TILE_SIZE);
+        
+        // Impostiamo l'hitbox iniziale con una leggera riduzione orizzontale
+        int shrinkX = 10;
+        int w = GameStruct.TILE_SIZE - shrinkX;
+        int h = GameStruct.TILE_SIZE;
+        getBoundingBox().setBounds((int) x + (shrinkX / 2), (int) y, w, h);
+        
         this.itemType = itemType;
     }
 
@@ -27,10 +33,22 @@ public class Collectible extends Object {
     }
 
     @Override
+    public Rectangle getBoundingBox() {
+        // Garantiamo che l'hitbox rimanga ristretta anche durante i controlli dinamici
+        int shrinkX = 10;
+        return new Rectangle(
+            (int) getPosition().getX() + (shrinkX / 2), 
+            (int) getPosition().getY(), 
+            GameStruct.TILE_SIZE - shrinkX, 
+            GameStruct.TILE_SIZE
+        );
+    }
+
+    @Override
     public void update(Player player) {
         if (!collected && player != null && getBoundingBox().intersects(player.getBoundingBox())) {
             collected = true;
-            player.getInventory().addItem(itemType); // Aggiunge lo specifico tipo di oggetto all'inventario
+            player.getInventory().addItem(itemType); 
         }
     }
 }

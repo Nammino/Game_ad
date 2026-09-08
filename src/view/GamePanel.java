@@ -50,6 +50,7 @@ public class GamePanel extends JPanel {
     private int selectedLevelIndex = 0;
     private int currentOptionIndex = 0;
     private int selectedSlot = 0;
+    private int bowAnimationFrames = 0;
     
     private final String[] menuOptions = {"Nuova Partita", "Carica Partita", "Impostazioni", "Esci"};
 
@@ -75,12 +76,18 @@ public class GamePanel extends JPanel {
                     Level currentLevel = model.getCurrentWorld().getLevels().get(selectedLevelIndex);
                     
                     if (!currentLevel.isCompleted()) {
+                        // 1. Aggiorna i calcoli della velocità del player dai comandi
                         model.getPlayer().update(currentLevel.getMap());
                         
+                        // 2. Esegui le collisioni con i tile e aggiorna la posizione in modo sicuro!
+                        collisionManager.checkTileCollisions(model.getPlayer(), currentLevel.getMap());
+
                         // Decrementa il contatore dell'animazione della spada ad ogni fotogramma
                         if (swordAnimationFrames > 0) {
                             swordAnimationFrames--;
                         }
+                        
+                        // ... (il resto del codice rimane invariato)
                         
                         // Aggiorna proiettili del giocatore
                         playerProjectiles.removeIf(p -> {
@@ -145,13 +152,18 @@ public class GamePanel extends JPanel {
                                 // Attiva l'animazione della spada per 10 fotogrammi
                                 swordAnimationFrames = 10; 
                                 
-                             // EFFETTO SPADA: Controlla i nemici vicini e li uccide (rimuovendoli)
+                                // EFFETTO SPADA DIREZIONALE: Controlla i nemici sul lato corretto
                                 if (currentLevel.getEntities() != null) {
                                     currentLevel.getEntities().removeIf(entity -> {
                                         if (entity instanceof Enemy || entity instanceof ShootingEnemy) {
-                                            int slashWidth = 30;  // Larghezza del fendente
-                                            int slashHeight = 12; // Altezza ridotta (orizzontale)
-                                            int slashX = (int) player.getPosition().getX() + GameStruct.TILE_SIZE;
+                                            int slashWidth = 30;  
+                                            int slashHeight = 12; 
+                                            
+                                            // Se guarda a destra spawna a destra, se guarda a sinistra spawna a sinistra
+                                            int slashX = player.isFacingRight() ? 
+                                                (int) player.getPosition().getX() + GameStruct.TILE_SIZE : 
+                                                (int) player.getPosition().getX() - slashWidth;
+                                                
                                             int slashY = (int) player.getPosition().getY() + (GameStruct.TILE_SIZE / 2) - (slashHeight / 2);
                                             
                                             java.awt.Rectangle swordRange = new java.awt.Rectangle(slashX, slashY, slashWidth, slashHeight);
@@ -167,14 +179,19 @@ public class GamePanel extends JPanel {
                                 repaint();
                                 
                             } else if (activeItem.getType().equals("GUN")) {
-                                activeItem.use(); // Scala un utilizzo
+                                activeItem.use(); 
+                                bowAnimationFrames = 10; // <-- Attiva l'animazione dell'arco per 10 frame
                                 
                                 double pX = player.getPosition().getX();
                                 double pY = player.getPosition().getY();
+                                
+                                double targetX = player.isFacingRight() ? pX + 200 : pX - 200;
+                                double startBulletX = player.isFacingRight() ? pX + GameStruct.TILE_SIZE : pX - 12;
+                                
                                 Projectile bullet = new Projectile(
-                                    pX + GameStruct.TILE_SIZE, 
+                                    startBulletX, 
                                     pY + (GameStruct.TILE_SIZE / 2.0), 
-                                    pX + GameStruct.TILE_SIZE + 100, 
+                                    targetX, 
                                     pY + (GameStruct.TILE_SIZE / 2.0), 
                                     8.0 
                                 );  
@@ -336,5 +353,9 @@ public class GamePanel extends JPanel {
     // Metodo getter per leggere lo stato dell'animazione della spada
     public int getSwordAnimationFrames() {
         return swordAnimationFrames;
+    }
+    
+    public int getBowAnimationFrames() {
+        return bowAnimationFrames;
     }
 }

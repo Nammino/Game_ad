@@ -1,24 +1,40 @@
 package model;
 
 import java.awt.Rectangle;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import javax.imageio.ImageIO;
 import java.util.Random;
 
 public class Enemy implements Entity {
     private Vector2D position;
     private int width;
     private int height;
+    private BufferedImage sprite;
     
     private double speed = 1.0;          
     private double visionRange = 220.0;  
     
     private int wanderTimer = 0;
-    private int currentDirection = 1;    
+    private int currentDirection = 1;     
     private Random random = new Random();
 
     public Enemy(double x, double y) {
-        this.width = GameStruct.TILE_SIZE;
-        this.height = GameStruct.TILE_SIZE;
         this.position = new Vector2D(x, y);
+        
+        try {
+            sprite = ImageIO.read(getClass().getResourceAsStream("/sprite/greenslime_down_1.png"));
+            // Forziamo le dimensioni al TILE_SIZE coerentemente con il rendering ingrandito
+            this.width = GameStruct.TILE_SIZE;
+            this.height = GameStruct.TILE_SIZE;
+        } catch (IOException | IllegalArgumentException e) {
+            this.width = GameStruct.TILE_SIZE;
+            this.height = GameStruct.TILE_SIZE;
+        }
+    }
+
+    public BufferedImage getSprite() {
+        return sprite;
     }
 
     @Override
@@ -28,14 +44,20 @@ public class Enemy implements Entity {
 
     @Override
     public Rectangle getBoundingBox() {
-        return new Rectangle((int) position.getX(), (int) position.getY(), width, height);
+        // Riduciamo la larghezza dell'hitbox di 10 pixel (5 a destra e 5 a sinistra) per renderla più permissiva
+        int shrinkX = 10;
+        return new Rectangle(
+            (int) position.getX() + (shrinkX / 2), 
+            (int) position.getY(), 
+            width - shrinkX, 
+            height
+        );
     }
 
     @Override
     public void update(Player player) {
         if (player == null) return;
 
-        // Danno da contatto diretto con il personaggio
         if (getBoundingBox().intersects(player.getBoundingBox())) {
             player.takeDamage(1); 
         }

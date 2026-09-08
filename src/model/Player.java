@@ -3,145 +3,154 @@ package model;
 import java.awt.Rectangle;
 import java.util.ArrayList;
 
-public class Player extends Character {
-
-    private final double GRAVITY = 0.8;
-    private final double JUMP_STRENGTH = -13.9;
-    private final double MOVE_SPEED = 4.0;
-
-    private final int maxHealth = 100;
-    private int health = 100;
-
+public class Player implements Entity {
+    private Vector2D position;
+    private Vector2D velocity;
+    private int width;
+    private int height;
+    private int health;
+    private int maxHealth;
+    private Inventory inventory;
+    
+    // Stati di movimento e direzione
+    private boolean grounded = false;
     private boolean left = false;
     private boolean right = false;
     private boolean jumpRequested = false;
-    private Inventory inventory = new Inventory();
+    private boolean facingRight = true;
 
+    // Costruttore vuoto richiesto da GameStructImpl (es. new Player())
     public Player() {
-        super();
-        getPosition().setX(50);
-        getPosition().setY(100);
+        this(100, 100); // Posizione di default
     }
 
-    public int getHealth() { return health; }
-    public int getMaxHealth() { return maxHealth; }
-    
-    public void setHealth(int health) { 
-        this.health = Math.max(0, Math.min(health, maxHealth)); 
+    public Player(double x, double y) {
+        this.width = GameStruct.TILE_SIZE;
+        this.height = GameStruct.TILE_SIZE;
+        this.position = new Vector2D(x, y);
+        this.velocity = new Vector2D(0, 0);
+        this.maxHealth = 100;
+        this.health = 100;
+        this.inventory = new Inventory();
     }
-    
+
+    @Override
+    public Vector2D getPosition() {
+        return position;
+    }
+
+    @Override
+    public Rectangle getBoundingBox() {
+        return new Rectangle((int) position.getX(), (int) position.getY(), width, height);
+    }
+
+    public Vector2D getVelocity() {
+        return velocity;
+    }
+
+    public int getHealth() {
+        return health;
+    }
+
+    public void setHealth(int health) {
+        this.health = Math.max(0, Math.min(health, maxHealth));
+    }
+
     public void takeDamage(int amount) {
         this.health = Math.max(0, this.health - amount);
     }
-
+    
     public void resetHealth() {
-        this.health = this.maxHealth;
+        this.health = maxHealth;
     }
 
-    public void setLeft(boolean left) { this.left = left; }
-    public void setRight(boolean right) { this.right = right; }
-    public void setJumpRequested(boolean jumpRequested) { this.jumpRequested = jumpRequested; }
+    public int getMaxHealth() {
+        return maxHealth;
+    }
 
-    public void update(ArrayList<String> map) {
-        if (left && !right) {
-            getVelocity().setX(-MOVE_SPEED);
-        } else if (right && !left) {
-            getVelocity().setX(MOVE_SPEED);
-        } else {
-            getVelocity().setX(0);
+    public Inventory getInventory() {
+        return inventory;
+    }
+
+    // --- Gestione Direzione Sprite ---
+    public boolean isFacingRight() {
+        return facingRight;
+    }
+
+    public void setFacingRight(boolean facingRight) {
+        this.facingRight = facingRight;
+    }
+
+    // --- Metodi di Movimento e Stati richiesti da Controller e CollisionManager ---
+    public boolean isGrounded() {
+        return grounded;
+    }
+
+    public void setGrounded(boolean grounded) {
+        this.grounded = grounded;
+    }
+
+    public boolean isLeft() {
+        return left;
+    }
+
+    public void setLeft(boolean left) {
+        this.left = left;
+        if (left) {
+            this.facingRight = false; // Se va a sinistra, si gira a sinistra
         }
+    }
 
-        if (jumpRequested && isGrounded()) {
-            getVelocity().setY(JUMP_STRENGTH);
-            setGrounded(false);
-            jumpRequested = false;
+    public boolean isRight() {
+        return right;
+    }
+
+    public void setRight(boolean right) {
+        this.right = right;
+        if (right) {
+            this.facingRight = true; // Se va a destra, si gira a destra
         }
+    }
 
-        getVelocity().setY(getVelocity().getY() + GRAVITY);
+    public boolean isJumpRequested() {
+        return jumpRequested;
+    }
 
-        int tileSize = GameStruct.TILE_SIZE;
-
-        getPosition().setX(getPosition().getX() + getVelocity().getX());
-
-        if (getPosition().getX() < 0) {
-            getPosition().setX(0);
-        } 
-        
-        if (map != null && !map.isEmpty() && map.get(0) != null) {
-            int mapWidthPixels = map.get(0).length() * tileSize;
-            if (getPosition().getX() > mapWidthPixels - tileSize) {
-                getPosition().setX(mapWidthPixels - tileSize);
-            }
-        }
-
-        getBoundingBox().setBounds((int) Math.round(getPosition().getX()), (int) Math.round(getPosition().getY()), tileSize, tileSize);
-
-        for (Rectangle tile : getSolidTiles(map, tileSize)) {
-            if (getBoundingBox().intersects(tile)) {
-                if (getVelocity().getX() > 0) {
-                    getPosition().setX(tile.x - tileSize);
-                } else if (getVelocity().getX() < 0) {
-                    getPosition().setX(tile.x + tile.width);
-                }
-                getBoundingBox().setBounds((int) Math.round(getPosition().getX()), (int) Math.round(getPosition().getY()), tileSize, tileSize);
-            }
-        }
-
-        getPosition().setY(getPosition().getY() + getVelocity().getY());
-        getBoundingBox().setBounds((int) Math.round(getPosition().getX()), (int) Math.round(getPosition().getY()), tileSize, tileSize);
-
-        setGrounded(false);
-        for (Rectangle tile : getSolidTiles(map, tileSize)) {
-            if (getBoundingBox().intersects(tile)) {
-                if (getVelocity().getY() > 0) { // Atterraggio
-                    getPosition().setY(tile.y - tileSize);
-                    getVelocity().setY(0);
-                    setGrounded(true);
-                } else if (getVelocity().getY() < 0) { // Soffitto
-                    getPosition().setY(tile.y + tile.height);
-                    getVelocity().setY(0);
-                }
-                getBoundingBox().setBounds((int) Math.round(getPosition().getX()), (int) Math.round(getPosition().getY()), tileSize, tileSize);
-            }
-        }
-
-        if (map != null && !map.isEmpty()) {
-            int mapHeightPixels = map.size() * tileSize;
-            if (getPosition().getY() > mapHeightPixels + 100) {
-                takeDamage(maxHealth); 
-            }
-        }
+    public void setJumpRequested(boolean jumpRequested) {
+        this.jumpRequested = jumpRequested;
     }
 
     @Override
     public void update(Player player) {
-        // Il player aggiorna se stesso usando la mappa del livello corrente
-        // (Puoi mantenere qui la logica di update esistente basata sulla mappa, 
-        // oppure puoi recuperare la mappa se ti serve, ma la tua struttura attuale la passa dal GamePanel)
+        // Metodo vuoto se richiesto dall'interfaccia Entity
     }
     
-    private ArrayList<Rectangle> getSolidTiles(ArrayList<String> map, int tileSize) {
-        ArrayList<Rectangle> solidTiles = new ArrayList<>();
-        if (map == null || map.isEmpty()) return solidTiles;
+    // --- Gestisce solo la velocità idddddn base ai comandi, il movimento vero e proprio lo fa il CollisionManager ---
+    public void update(ArrayList<String> map) {
+        double gravity = 0.5;
+        double moveSpeed = 4.0;
+        double jumpStrength = -11;
 
-        int startCol = Math.max(0, (int) getPosition().getX() / tileSize - 1);
-        int endCol = Math.min(map.get(0).length() - 1, ((int) getPosition().getX() + tileSize) / tileSize + 1);
-        int startRow = Math.max(0, (int) getPosition().getY() / tileSize - 1);
-        int endRow = Math.min(map.size() - 1, ((int) getPosition().getY() + tileSize) / tileSize + 1);
-
-        for (int row = startRow; row <= endRow; row++) {
-            String line = map.get(row);
-            for (int col = startCol; col <= endCol; col++) {
-                char c = line.charAt(col);
-                if (c == '#' || c == '?') {
-                    solidTiles.add(new Rectangle(col * tileSize, row * tileSize, tileSize, tileSize));
-                }
-            }
+        // Gestione movimento orizzontale (Velocità X)
+        double vx = 0;
+        if (left) {
+            vx = -moveSpeed;
         }
-        return solidTiles;
-    }
-    
-    public Inventory getInventory() {
-        return inventory;
+        if (right) {
+            vx = moveSpeed;
+        }
+        velocity.setX(vx);
+
+        // Gestione salto (se a terra e viene richiesto il salto)
+        if (jumpRequested && grounded) {
+            velocity.setY(jumpStrength);
+            grounded = false;
+            jumpRequested = false;
+        }
+
+        // Applicazione gravità alla velocità Y se non è a terra
+        if (!grounded) {
+            velocity.setY(velocity.getY() + gravity);
+        }
     }
 }

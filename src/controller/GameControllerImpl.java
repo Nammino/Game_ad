@@ -30,13 +30,20 @@ public class GameControllerImpl extends KeyAdapter implements GameController {
         if (state == GameState.PLAYING) {
             model.Level currentLevel = model.getCurrentWorld().getLevels().get(panel.getSelectedLevelIndex());
 
+         // AGGIUNTA: Permetti di premere 'R' in qualsiasi momento durante il gioco per riavviare subito
+            if (code == KeyEvent.VK_R) {
+                currentLevel.setCompleted(false);
+                panel.restartCurrentLevel();
+                panel.repaint();
+                return;
+            }
+
             if (currentLevel.isCompleted()) {
                 if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE) {
                     panel.resetPlayerPosition();
                     panel.setCurrentState(GameState.LEVEL_SELECTION);
                     panel.repaint();
                 } else if (code == KeyEvent.VK_R) {
-                    // Riavvia il livello corrente e rimuove lo stato di completamento
                     currentLevel.setCompleted(false);
                     panel.restartCurrentLevel();
                     panel.repaint();
@@ -89,11 +96,15 @@ public class GameControllerImpl extends KeyAdapter implements GameController {
                 case KeyEvent.VK_ENTER, KeyEvent.VK_SPACE -> {
                     int option = pause.getSelectedIndex();
                     switch (option) {
-                        case 0 -> panel.setCurrentState(GameState.PLAYING); // Continua
-                        case 1 -> { 
-                            panel.restartCurrentLevel(); // <-- Resetta tutto (giocatore, inventario e livello)
-                            panel.setCurrentState(GameState.PLAYING); 
-                        }
+	                    case 0 -> { 
+	                        panel.setCurrentState(GameState.PLAYING); // Continua
+	                        panel.requestFocusInWindow(); // <-- AGGIUNGI QUESTO
+	                    }
+	                    case 1 -> { 
+	                        panel.restartCurrentLevel(); 
+	                        panel.setCurrentState(GameState.PLAYING); 
+	                        panel.requestFocusInWindow(); // <-- AGGIUNGI QUESTO
+	                    }
                         case 2 -> { previousState = GameState.PAUSE; panel.setCurrentState(GameState.SETTINGS); }
                         case 3 -> panel.setCurrentState(GameState.LEVEL_SELECTION);
                     }
@@ -108,7 +119,16 @@ public class GameControllerImpl extends KeyAdapter implements GameController {
             switch (code) {
                 case KeyEvent.VK_LEFT, KeyEvent.VK_A -> { panel.navigateLevel(-1); panel.repaint(); }
                 case KeyEvent.VK_RIGHT, KeyEvent.VK_D -> { panel.navigateLevel(1); panel.repaint(); }
-                case KeyEvent.VK_ENTER, KeyEvent.VK_SPACE -> { panel.resetPlayerPosition(); panel.setCurrentState(GameState.PLAYING); panel.repaint(); }
+                case KeyEvent.VK_ENTER, KeyEvent.VK_SPACE -> { 
+                    model.Level currentLevel = model.getCurrentWorld().getLevels().get(panel.getSelectedLevelIndex());
+                    currentLevel.setCompleted(false);
+                    panel.restartCurrentLevel();
+                    
+                    panel.resetPlayerPosition(); 
+                    panel.setCurrentState(GameState.PLAYING); 
+                    panel.requestFocusInWindow(); // <-- AGGIUNGI QUESTO
+                    panel.repaint(); 
+                }
                 case KeyEvent.VK_ESCAPE -> { panel.setCurrentState(GameState.WORLD_SELECTION); panel.repaint(); }
             }
             return;
@@ -172,7 +192,10 @@ public class GameControllerImpl extends KeyAdapter implements GameController {
                     int option = panel.getCurrentOptionIndex();
                     switch (option) {
                         case 0 -> panel.setCurrentState(GameState.WORLD_SELECTION);
-                        case 1 -> panel.setCurrentState(GameState.PLAYING);
+                        case 1 -> {
+                            panel.setCurrentState(GameState.PLAYING);
+                            panel.requestFocusInWindow(); // <-- AGGIUNGI QUESTO
+                        }
                         case 2 -> { previousState = GameState.MENU; panel.setCurrentState(GameState.SETTINGS); }
                         case 3 -> System.exit(0);
                     }

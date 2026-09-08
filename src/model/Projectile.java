@@ -77,4 +77,8 @@ public class Projectile extends Object {
     public void setActive(boolean active) {
         this.active = active;
     }
+    
+    public double getSpeedX() {
+        return speedX;
+    }
 }
