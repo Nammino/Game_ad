@@ -10,7 +10,7 @@ import javax.swing.SwingUtilities;
 
 public class SettingsPanel {
 
-    private final String[] tabs = {"Audio", "Grafica", "Finestra", "Controlli", "Account"};
+    private final String[] tabs = {"Audio", "Grafica", "Controlli"};
     private int selectedTab = 0;
 
     private int activeFocusArea = 1;
@@ -28,13 +28,11 @@ public class SettingsPanel {
     private boolean tempMuted = false;
     private int tempResIdx = 0, tempFpsIdx = 1;
     private boolean tempFullScreen = false, tempVSync = true;
-    private boolean tempCloudSave = true;
 
     private int appliedMusicVol = 80, appliedSfxVol = 100;
     private boolean appliedMuted = false;
     private int appliedResIdx = 0, appliedFpsIdx = 1;
     private boolean appliedFullScreen = false, appliedVSync = true;
-    private boolean appliedCloudSave = true;
 
     private final String[] resolutions = {"800x600", "1280x720", "1920x1080"};
     private final String[] fpsLimits = {"30 FPS", "60 FPS", "120 FPS", "Illimitati"};
@@ -73,15 +71,20 @@ public class SettingsPanel {
                 else if (selectedOptionIndex == 2) tempMuted = !tempMuted;
             }
             case 1 -> {
-                if (selectedOptionIndex == 0) tempResIdx = (tempResIdx + direction + resolutions.length) % resolutions.length;
+                if (selectedOptionIndex == 0) {
+                    // Se lo schermo intero è attivo, blocchiamo la modifica della risoluzione
+                    if (!tempFullScreen) {
+                        tempResIdx = (tempResIdx + direction + resolutions.length) % resolutions.length;
+                    }
+                }
                 else if (selectedOptionIndex == 1) tempFpsIdx = (tempFpsIdx + direction + fpsLimits.length) % fpsLimits.length;
-            }
-            case 2 -> {
-                if (selectedOptionIndex == 0) tempFullScreen = !tempFullScreen;
-                else if (selectedOptionIndex == 1) tempVSync = !tempVSync;
-            }
-            case 4 -> {
-                if (selectedOptionIndex == 1) tempCloudSave = !tempCloudSave;
+                else if (selectedOptionIndex == 2) {
+                    tempFullScreen = !tempFullScreen;
+                    if (tempFullScreen) {
+                        tempResIdx = 2; // Forza 1920x1080 se va in schermo intero
+                    }
+                }
+                else if (selectedOptionIndex == 3) tempVSync = !tempVSync;
             }
         }
     }
@@ -100,23 +103,21 @@ public class SettingsPanel {
                 appliedMuted = tempMuted;
             }
             case 1 -> {
+                boolean isFullScreenChanged = (appliedFullScreen != tempFullScreen);
                 appliedResIdx = tempResIdx;
                 appliedFpsIdx = tempFpsIdx;
-                if (frame != null && !appliedFullScreen) {
-                    String[] res = resolutions[appliedResIdx].split("x");
-                    frame.setWindowSize(Integer.parseInt(res[0]), Integer.parseInt(res[1]));
-                }
-            }
-            case 2 -> {
-                boolean isFullScreenChanged = (appliedFullScreen != tempFullScreen);
                 appliedFullScreen = tempFullScreen;
                 appliedVSync = tempVSync;
-                if (frame != null && isFullScreenChanged) {
-                    frame.setFullScreen(appliedFullScreen);
+
+                if (frame != null) {
+                    if (isFullScreenChanged) {
+                        frame.setFullScreen(appliedFullScreen);
+                    }
+                    if (!appliedFullScreen) {
+                        String[] res = resolutions[appliedResIdx].split("x");
+                        frame.setWindowSize(Integer.parseInt(res[0]), Integer.parseInt(res[1]));
+                    }
                 }
-            }
-            case 4 -> {
-                appliedCloudSave = tempCloudSave;
             }
         }
         showStatusMessage("Modifiche applicate per " + tabs[selectedTab] + "!");
@@ -124,11 +125,9 @@ public class SettingsPanel {
 
     private int getCurrentOptionsCount() {
         return switch (selectedTab) {
-            case 0 -> 3;
-            case 1 -> 2;
-            case 2 -> 2;
-            case 3 -> 3;
-            case 4 -> 2;
+            case 0 -> 3; 
+            case 1 -> 4; 
+            case 2 -> 3; 
             default -> 0;
         };
     }
@@ -184,7 +183,10 @@ public class SettingsPanel {
                     if (i == 0) tempMusicVol = newVol;
                     else tempSfxVol = newVol;
                 } else {
-                    navigateHorizontal(1);
+                    // Se siamo su Risoluzione e lo schermo intero è attivo, blocchiamo il click
+                    if (!(selectedTab == 1 && i == 0 && tempFullScreen)) {
+                        navigateHorizontal(1);
+                    }
                 }
                 return true;
             }
@@ -196,7 +198,6 @@ public class SettingsPanel {
         return false;
     }
 
-    // TRASCINAMENTO DEL MOUSE (DRAG AUDIO)
     public void handleMouseDrag(Point mousePoint) {
         if (selectedTab != 0) return;
 
@@ -217,18 +218,22 @@ public class SettingsPanel {
     }
 
     public void draw(Graphics2D g2, GamePanel panel) {
+        int panelWidth = panel.getWidth();
+        int panelHeight = panel.getHeight();
+
         g2.setFont(new Font("Arial", Font.BOLD, 36));
         g2.setColor(Color.YELLOW);
         String title = "IMPOSTAZIONI";
-        g2.drawString(title, getCenteredX(g2, title, panel.getWidth()), 60);
+        g2.drawString(title, getCenteredX(g2, title, panelWidth), 60);
 
         g2.setFont(new Font("Arial", Font.BOLD, 18));
         FontMetrics tabMetrics = g2.getFontMetrics();
-        int startX = 50;
+        int totalTabsWidth = tabs.length * 140;
+        int startX = (panelWidth - totalTabsWidth) / 2;
 
         for (int i = 0; i < tabs.length; i++) {
             int textWidth = tabMetrics.stringWidth(tabs[i]);
-            int x = startX + (i * 140);
+            int x = startX + (i * 140) + (140 - textWidth) / 2;
             int y = 110;
 
             tabBounds[i].setBounds(x - 10, y - 22, textWidth + 20, 30);
@@ -243,14 +248,14 @@ public class SettingsPanel {
         }
 
         g2.setColor(Color.WHITE);
-        g2.drawLine(40, 130, panel.getWidth() - 40, 130);
+        g2.drawLine(40, 130, panelWidth - 40, 130);
 
-        drawTabContent(g2, panel.getWidth());
+        drawTabContent(g2, panelWidth);
 
         g2.setFont(new Font("Arial", Font.BOLD, 22));
         String backText = "< Torna al Menu Principale >";
-        int backX = getCenteredX(g2, backText, panel.getWidth());
-        int backY = 510;
+        int backX = getCenteredX(g2, backText, panelWidth);
+        int backY = panelHeight - 90;
         backButtonBounds.setBounds(backX, backY - 20, g2.getFontMetrics().stringWidth(backText), 30);
         g2.setColor(Color.CYAN);
         g2.drawString(backText, backX, backY);
@@ -258,13 +263,13 @@ public class SettingsPanel {
         if (System.currentTimeMillis() - statusMessageTime < 2500 && !statusMessage.isEmpty()) {
             g2.setFont(new Font("Arial", Font.BOLD, 16));
             g2.setColor(Color.GREEN);
-            g2.drawString(statusMessage, getCenteredX(g2, statusMessage, panel.getWidth()), 465);
+            g2.drawString(statusMessage, getCenteredX(g2, statusMessage, panelWidth), panelHeight - 130);
         }
 
         g2.setFont(new Font("Arial", Font.PLAIN, 14));
         g2.setColor(Color.LIGHT_GRAY);
         String hint = "TAB per Schede | FRECCE per muoverti | ENTER/CLICK per applicare o modificare";
-        g2.drawString(hint, getCenteredX(g2, hint, panel.getWidth()), 560);
+        g2.drawString(hint, getCenteredX(g2, hint, panelWidth), panelHeight - 40);
     }
 
     private void drawTabContent(Graphics2D g2, int panelWidth) {
@@ -290,26 +295,41 @@ public class SettingsPanel {
                 g2.drawString(muteText, x, y);
             }
         } else {
+            String resLabel = tempFullScreen ? "Risoluzione: 1920x1080 (Bloccata)" : "Risoluzione: < " + resolutions[tempResIdx] + " >";
+            
             String[] labels = switch (selectedTab) {
-                case 1 -> new String[]{"Risoluzione: < " + resolutions[tempResIdx] + " >", "Limite FPS: < " + fpsLimits[tempFpsIdx] + " >"};
-                case 2 -> new String[]{"Schermo Intero: " + (tempFullScreen ? "[ATTIVO]" : "[DISATTIVO]"), "V-Sync: " + (tempVSync ? "[ATTIVO]" : "[DISATTIVO]")};
-                case 3 -> new String[]{"Tasto Salto: SPACE", "Muovi A Sinistra: LEFT", "Muovi A Destra: RIGHT"};
-                case 4 -> new String[]{"Utente: Giocatore 1", "Salvataggio Cloud: " + (tempCloudSave ? "[ATTIVO]" : "[DISATTIVO]")};
+                case 1 -> new String[]{
+                    resLabel,
+                    "Limite FPS: < " + fpsLimits[tempFpsIdx] + " >",
+                    "Schermo Intero: " + (tempFullScreen ? "[ATTIVO]" : "[DISATTIVO]"),
+                    "V-Sync: " + (tempVSync ? "[ATTIVO]" : "[DISATTIVO]")
+                };
+                case 2 -> new String[]{
+                    "Tasto Salto: SPACE",
+                    "Muovi A Sinistra: LEFT",
+                    "Muovi A Destra: RIGHT"
+                };
                 default -> new String[0];
             };
 
             for (int i = 0; i < labels.length; i++) {
                 int textWidth = metrics.stringWidth(labels[i]);
                 int x = (panelWidth - textWidth) / 2;
-                int y = startY + (i * 50);
+                int y = startY + (i * 45);
 
                 optionBounds[i].setBounds(x, y - metrics.getAscent(), textWidth, metrics.getHeight());
 
                 if (i == selectedOptionIndex && activeFocusArea == 1) {
-                    g2.setColor(Color.RED);
-                    g2.drawString("> " + labels[i] + " <", x - 30, y);
+                    // Se la risoluzione è bloccata, evidenziamo in grigio o lasciamo capire che non è modificabile
+                    if (selectedTab == 1 && i == 0 && tempFullScreen) {
+                        g2.setColor(Color.DARK_GRAY);
+                        g2.drawString(labels[i], x, y);
+                    } else {
+                        g2.setColor(Color.RED);
+                        g2.drawString("> " + labels[i] + " <", x - 30, y);
+                    }
                 } else {
-                    g2.setColor(Color.WHITE);
+                    g2.setColor((selectedTab == 1 && i == 0 && tempFullScreen) ? Color.DARK_GRAY : Color.WHITE);
                     g2.drawString(labels[i], x, y);
                 }
             }
@@ -319,7 +339,7 @@ public class SettingsPanel {
         String applyText = "[ APPLICA MODIFICHE ]";
         int applyWidth = metrics.stringWidth(applyText);
         int applyX = (panelWidth - applyWidth) / 2;
-        int applyY = startY + (applyIndex * 50) + 20;
+        int applyY = startY + (applyIndex * 45) + 20;
 
         applyButtonBounds.setBounds(applyX, applyY - metrics.getAscent(), applyWidth, metrics.getHeight());
 

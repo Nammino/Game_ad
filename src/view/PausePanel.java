@@ -22,22 +22,27 @@ public class PausePanel {
     }
 
     public void draw(Graphics2D g2, GamePanel panel) {
+        int width = panel.getWidth();
+        int height = panel.getHeight();
+
+        // Copre interamente lo schermo dinamico
         g2.setColor(new Color(0, 0, 0, 180));
-        g2.fillRect(0, 0, GamePanel.PANEL_WIDTH, GamePanel.PANEL_HEIGHT);
+        g2.fillRect(0, 0, width, height);
 
         g2.setFont(new Font("Arial", Font.BOLD, 36));
         g2.setColor(Color.YELLOW);
         String title = "PAUSA";
         FontMetrics metrics = g2.getFontMetrics();
-        g2.drawString(title, (GamePanel.PANEL_WIDTH - metrics.stringWidth(title)) / 2, 160);
+        g2.drawString(title, (width - metrics.stringWidth(title)) / 2, height / 2 - 100);
 
         g2.setFont(new Font("Arial", Font.BOLD, 22));
         FontMetrics optionMetrics = g2.getFontMetrics();
 
+        int startY = height / 2 - 30;
         for (int i = 0; i < pauseOptions.length; i++) {
             String text = pauseOptions[i];
-            int x = (GamePanel.PANEL_WIDTH - optionMetrics.stringWidth(text)) / 2;
-            int y = 260 + (i * 50);
+            int x = (width - optionMetrics.stringWidth(text)) / 2;
+            int y = startY + (i * 50);
 
             if (i == selectedIndex) {
                 g2.setColor(Color.CYAN);
