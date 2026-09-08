@@ -87,4 +87,14 @@ public class LevelImpl implements Level {
     public void setCompleted(boolean completed) {
         this.completed = completed;
     }
+    
+    @Override
+    public void resetLevel() {
+        this.completed = false;
+        if (this.entities != null) {
+            this.entities.clear();
+        }
+        // Richiama il build per rileggere i file e ricreare le entità/oggetti da zero
+        build();
+    }
 }

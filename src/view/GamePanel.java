@@ -9,10 +9,15 @@ import java.awt.Graphics2D;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.swing.JPanel;
 import javax.swing.Timer;
+
 import model.GameStruct;
 import model.Level;
+import model.Player;
 import model.CollisionManager;
 import model.CollisionManagerImpl;
 import model.Entity;
@@ -30,12 +35,13 @@ public class GamePanel extends JPanel {
     private final LevelSelectionPanel levelSelectionPanel;
     private final PlayingPanel playingPanel;
     private final PausePanel pausePanel;
-    private final InventoryPanel inventoryPanel; // Dichiarato correttamente
+    private final InventoryPanel inventoryPanel;
     
     private final CollisionManager collisionManager = new CollisionManagerImpl();
 
     private int selectedLevelIndex = 0;
     private int currentOptionIndex = 0;
+    private int selectedSlot = 0;
     private final String[] menuOptions = {"Nuova Partita", "Carica Partita", "Impostazioni", "Esci"};
 
     private Timer gameLoop;
@@ -50,19 +56,18 @@ public class GamePanel extends JPanel {
         this.levelSelectionPanel = new LevelSelectionPanel();
         this.playingPanel = new PlayingPanel();
         this.pausePanel = new PausePanel();
-        this.inventoryPanel = new InventoryPanel(); // Inizializzato correttamente
+        this.inventoryPanel = new InventoryPanel();
 
+        // GAME LOOP: blocca tutto se il livello è completato o se non siamo in PLAYING
         this.gameLoop = new Timer(16, e -> {
             if (currentState == GameState.PLAYING && model != null) {
                 if (model.getCurrentWorld() != null && !model.getCurrentWorld().getLevels().isEmpty()) {
                     Level currentLevel = model.getCurrentWorld().getLevels().get(selectedLevelIndex);
                     
-                    // SE IL LIVELLO È COMPLETATO, NON AGGIORNARE PIÙ NULLA (BLOCCA TUTTO)
+                    // SE IL LIVELLO NON È COMPLETATO, AGGIORNA. SE È COMPLETATO, CONGELA TUTTO!
                     if (!currentLevel.isCompleted()) {
-                        // 1. Aggiorna il giocatore (movimento, gravità)
                         model.getPlayer().update(currentLevel.getMap());
                         
-                        // 2. Aggiorna le entità (nemici, oggetti, ecc.)
                         if (currentLevel.getEntities() != null) {
                             for (Entity entity : currentLevel.getEntities()) {
                                 entity.update(model.getPlayer());
@@ -86,10 +91,38 @@ public class GamePanel extends JPanel {
                     if (worldSelectionPanel.handleMouseClick(e.getPoint(), GamePanel.this, model)) {
                         repaint();
                     }
+                } else if (currentState == GameState.PLAYING && e.getButton() == MouseEvent.BUTTON1) {
+                    // UTILIZZO DELL'OGGETTO CON IL CLICK SINISTRO
+                    if (model != null && model.getPlayer() != null) {
+                        Player player = model.getPlayer();
+                        List<String> allItems = player.getInventory().getCollectedItems();
+                        List<String> usableItems = new ArrayList<>();
+                        for (String item : allItems) {
+                            if (!item.equals("COIN")) {
+                                usableItems.add(item);
+                                if (usableItems.size() == 4) break;
+                            }
+                        }
+
+                        // Se lo slot selezionato è tra 0 e 3 e contiene un oggetto
+                        if (selectedSlot < 4 && selectedSlot < usableItems.size()) {
+                            String itemToUse = usableItems.get(selectedSlot);
+                            if (itemToUse.equals("POTION")) {
+                                if (player.getHealth() < player.getMaxHealth()) {
+                                    player.setHealth(Math.min(player.getMaxHealth(), player.getHealth() + 25));
+                                    allItems.remove("POTION"); // Consuma la pozione
+                                    repaint();
+                                }
+                            } else if (itemToUse.equals("SWORD") || itemToUse.equals("GUN")) {
+                                allItems.remove(itemToUse); // Consuma/usa l'oggetto
+                                repaint();
+                            }
+                        }
+                        // Lo slot 4 è quello vuoto di sicurezza: non fa nulla!
+                    }
                 }
             }
         });
-
         this.addMouseMotionListener(new MouseMotionAdapter() {
             @Override
             public void mouseMoved(MouseEvent e) {
@@ -106,6 +139,20 @@ public class GamePanel extends JPanel {
                     repaint();
                 }
             }
+        });
+
+        // --- AGGIUNGI QUESTO BLOCCO QUI PER LA ROTELLA DEL MOUSE ---
+        this.addMouseWheelListener(e -> {
+            int notches = e.getWheelRotation();
+            selectedSlot += notches;
+            
+            // Ciclo tra i 5 slot (0, 1, 2, 3, 4)
+            if (selectedSlot > 4) {
+                selectedSlot = 0;
+            } else if (selectedSlot < 0) {
+                selectedSlot = 4;
+            }
+            repaint();
         });
     }
 
@@ -149,7 +196,24 @@ public class GamePanel extends JPanel {
             model.getPlayer().resetHealth();
         }
     }
-
+    
+    public void restartCurrentLevel() {
+        if (model != null && model.getCurrentWorld() != null && !model.getCurrentWorld().getLevels().isEmpty()) {
+            Level currentLevel = model.getCurrentWorld().getLevels().get(selectedLevelIndex);
+            
+            // 1. Resetta le entità, gli oggetti e lo stato del livello corrente
+            currentLevel.resetLevel(); // <-- ORA RICARICA OGGETTI E NEMICI CORRETTAMENTE!
+            
+            // 2. Svuota l'inventario del giocatore
+            if (model.getPlayer() != null && model.getPlayer().getInventory() != null) {
+                model.getPlayer().getInventory().getCollectedItems().clear();
+            }
+            
+            // 3. Resetta posizione, velocità e vita del giocatore
+            resetPlayerPosition();
+        }
+    }
+    
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -197,5 +261,9 @@ public class GamePanel extends JPanel {
         g2.setColor(Color.GRAY);
         String hint = "Usa le FRECCE per spostarsi e PREMI ENTER per selezionare";
         g2.drawString(hint, (getWidth() - g2.getFontMetrics().stringWidth(hint)) / 2, 530);
+    }
+    
+    public int getSelectedSlot() { 
+        return selectedSlot; 
     }
 }

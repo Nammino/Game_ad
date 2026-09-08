@@ -1,9 +1,11 @@
 package view;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
+import java.util.List;
 
 import model.Collectible;
 import model.Enemy;
@@ -13,6 +15,8 @@ import model.GameStruct;
 import model.Level;
 import model.NeutralObject;
 import model.Player;
+import model.Projectile;
+import model.ShootingEnemy;
 import model.World;
 
 public class PlayingPanel {
@@ -35,16 +39,15 @@ public class PlayingPanel {
 
         if (player == null || map == null || map.isEmpty()) return;
 
-        // --- CONTROLLO MORTE / RESET ---
+     // --- CONTROLLO MORTE / RESET ---
         if (player.getHealth() <= 0) {
-            panel.resetPlayerPosition();
-            player.resetHealth();
+            panel.restartCurrentLevel(); // <-- Usa il reset completo anche alla morte
             return;
         }
 
         int tileSize = GameStruct.TILE_SIZE;
 
-     // --- CAMERA ---
+        // --- CAMERA ---
         int playerX = (int) Math.round(player.getPosition().getX());
         int playerY = (int) Math.round(player.getPosition().getY()); 
         
@@ -61,8 +64,6 @@ public class PlayingPanel {
         // --- LIMITI VERTICALI STABILI ---
         int maxMapHeight = map.size() * tileSize;
         
-        // Se la mappa è più piccola o uguale all'altezza del pannello, 
-        // blocchiamo la camera fissa a 0 ed evitiamo qualsiasi movimento verticale superfluo!
         if (maxMapHeight <= panelHeight) {
             cameraY = 0;
         } else {
@@ -75,7 +76,6 @@ public class PlayingPanel {
         g2.translate(-cameraX, -cameraY);
 
         // Disegno Mappa
-     // Disegno Mappa
         for (int row = 0; row < map.size(); row++) {
             String line = map.get(row);
             for (int col = 0; col < line.length(); col++) {
@@ -103,16 +103,15 @@ public class PlayingPanel {
             }
         }
 
-     // --- DISEGNO E GESTIONE DELLE ENTITÀ (Neutri, Collezionabili, Goal e Nemici) ---
+        // --- DISEGNO E GESTIONE DELLE ENTITÀ ---
         if (level.getEntities() != null) {
             
-            // 1. Prima passata: Disegno gli Oggetti Neutri (Sfondo / Decorativi)
+            // 1. Oggetti Neutri
             for (Entity entity : level.getEntities()) {
                 if (entity instanceof NeutralObject neutral) {
                     int nx = (int) Math.round(neutral.getPosition().getX());
                     int ny = (int) Math.round(neutral.getPosition().getY());
 
-                    // Disegno l'oggetto neutro di secondo piano (es. Grigio semitrasarente)
                     g2.setColor(new Color(120, 120, 120, 160));
                     g2.fillRect(nx, ny, tileSize, tileSize);
                     g2.setColor(Color.DARK_GRAY);
@@ -120,32 +119,42 @@ public class PlayingPanel {
                 }
             }
 
-            // 2. Seconda passata: Gestione e rimozione dei Collezionabili
+            // 2. Collezionabili
             level.getEntities().removeIf(entity -> {
                 if (entity instanceof Collectible col) {
-                    col.update(player); // Aggiorna lo stato di raccolta
+                    col.update(player); 
                     
-                    int cx = (int) Math.round(col.getPosition().getX());
-                    int cy = (int) Math.round(col.getPosition().getY());
-
                     if (!col.isCollected()) {
-                        // Disegna il collezionabile (es. Giallo brillante con una 'C')
-                        g2.setColor(Color.YELLOW);
-                        g2.fillRect(cx, cy, tileSize, tileSize);
+                        int cx = (int) Math.round(col.getPosition().getX());
+                        int cy = (int) Math.round(col.getPosition().getY());
+
+                        if (col.getItemType().equals("POTION")) {
+                            g2.setColor(Color.PINK);
+                            g2.fillRect(cx, cy, tileSize, tileSize);
+                        } else if (col.getItemType().equals("SWORD")) {
+                            g2.setColor(Color.LIGHT_GRAY);
+                            g2.fillRect(cx, cy, tileSize, tileSize);
+                        } else if (col.getItemType().equals("GUN")) {
+                            g2.setColor(Color.BLUE);
+                            g2.fillRect(cx, cy, tileSize, tileSize);
+                        } else if (col.getItemType().equals("COIN")) {
+                            g2.setColor(Color.YELLOW);
+                            g2.fillOval(cx + 8, cy + 8, tileSize - 16, tileSize - 16);
+                            g2.setColor(new Color(218, 165, 32));
+                            g2.drawOval(cx + 8, cy + 8, tileSize - 16, tileSize - 16);
+                            return col.isCollected();
+                        }
+
                         g2.setColor(Color.BLACK);
-                        g2.setFont(new Font("Arial", Font.BOLD, 14));
-                        g2.drawString("C", cx + 10, cy + 22);
                         g2.drawRect(cx, cy, tileSize, tileSize);
                     }
-                    return col.isCollected(); // Se è raccolto, viene rimosso dalla lista
+                    return col.isCollected(); 
                 }
                 return false;
             });
 
-            // 3. Terza passata: Gestione di Goal e Nemici
+            // 3. Goal e Nemici
             for (Entity entity : level.getEntities()) {
-                
-                // Traguardo (Goal)
                 if (entity instanceof Goal goal) {
                     int gx = (int) Math.round(goal.getPosition().getX());
                     int gy = (int) Math.round(goal.getPosition().getY());
@@ -162,13 +171,10 @@ public class PlayingPanel {
                         level.setCompleted(true);
                     }
                 }
-                
-                // Nemico (Enemy)
                 else if (entity instanceof Enemy enemy) {
                     int ex = (int) Math.round(enemy.getPosition().getX());
                     int ey = (int) Math.round(enemy.getPosition().getY());
 
-                    // Disegno il nemico (Viola/Magenta con una 'E')
                     g2.setColor(new Color(150, 0, 150));
                     g2.fillRect(ex, ey, tileSize, tileSize);
                     g2.setColor(Color.WHITE);
@@ -177,9 +183,27 @@ public class PlayingPanel {
                     g2.setColor(Color.BLACK);
                     g2.drawRect(ex, ey, tileSize, tileSize);
 
-                    // Se il giocatore tocca il nemico, gli toglie vita
                     if (player.getBoundingBox().intersects(enemy.getBoundingBox())) {
                         player.setHealth(player.getHealth() - 1); 
+                    }
+                }
+                else if (entity instanceof ShootingEnemy shootingEnemy) {
+                    int sx = (int) Math.round(shootingEnemy.getPosition().getX());
+                    int sy = (int) Math.round(shootingEnemy.getPosition().getY());
+
+                    g2.setColor(new Color(200, 80, 0));
+                    g2.fillRect(sx, sy, tileSize, tileSize);
+                    g2.setColor(Color.WHITE);
+                    g2.setFont(new Font("Arial", Font.BOLD, 18));
+                    g2.drawString("S", sx + 10, sy + 24);
+                    g2.setColor(Color.BLACK);
+                    g2.drawRect(sx, sy, tileSize, tileSize);
+
+                    g2.setColor(Color.YELLOW);
+                    for (Projectile p : shootingEnemy.getActiveProjectiles()) {
+                        int px = (int) Math.round(p.getPosition().getX());
+                        int py = (int) Math.round(p.getPosition().getY());
+                        g2.fillOval(px, py, 12, 12);
                     }
                 }
             }
@@ -200,7 +224,7 @@ public class PlayingPanel {
         // --- HUD / BARRA VITA ---
         g2.setColor(Color.WHITE);
         g2.setFont(new Font("Arial", Font.BOLD, 14));
-        g2.drawString("Usa A/D per Muoverti, SPAZIO per Saltare | ESC per Uscire", 20, 25);
+        g2.drawString("A/D: Muovi | SPAZIO: Salta | Rotella: Seleziona Slot | Click SX: Usa Oggetto", 20, 25);
 
         int barX = 20;
         int barY = 35;
@@ -220,20 +244,81 @@ public class PlayingPanel {
         g2.setFont(new Font("Arial", Font.BOLD, 11));
         g2.drawString("HP: " + player.getHealth() + " / " + player.getMaxHealth(), barX + 50, barY + 14);
 
+        // --- MINI INVENTARIO IN BASSO A SINISTRA (5 slot totali: 4 oggetti + 1 vuoto di sicurezza) ---
+        List<String> allItems = player.getInventory().getCollectedItems();
+        List<String> usableItems = new ArrayList<>();
+        
+        for (String item : allItems) {
+            if (!item.equals("COIN")) {
+                usableItems.add(item);
+                if (usableItems.size() == 4) break; 
+            }
+        }
+
+        int slotSize = 40;
+        int slotSpacing = 10;
+        int miniInvX = 20;
+        int miniInvY = panelHeight - 70; 
+
+        java.awt.Stroke originalStroke = g2.getStroke();
+
+        g2.setFont(new Font("Arial", Font.BOLD, 10));
+        for (int i = 0; i < 5; i++) { // Disegniamo 5 slot fissi (il 5° è sempre vuoto)
+            int currentX = miniInvX + i * (slotSize + slotSpacing);
+            
+            boolean isSelected = (i == panel.getSelectedSlot());
+
+            if (isSelected) {
+                g2.setColor(new Color(70, 70, 100, 230)); 
+            } else {
+                g2.setColor(new Color(40, 40, 50, 200)); 
+            }
+            g2.fillRect(currentX, miniInvY, slotSize, slotSize);
+
+            if (isSelected) {
+                g2.setColor(new Color(255, 215, 0)); 
+                g2.setStroke(new BasicStroke(3.0f)); 
+            } else {
+                g2.setColor(new Color(120, 120, 150)); 
+                g2.setStroke(new BasicStroke(1.0f)); 
+            }
+            g2.drawRect(currentX, miniInvY, slotSize, slotSize);
+
+            g2.setStroke(originalStroke);
+
+            // Disegna l'oggetto solo se rientra nei primi 4 slot ed esiste nell'inventario
+            if (i < 4 && i < usableItems.size()) {
+                String itemType = usableItems.get(i);
+                
+                if (itemType.equals("POTION")) {
+                    g2.setColor(Color.PINK);
+                } else if (itemType.equals("SWORD")) {
+                    g2.setColor(Color.LIGHT_GRAY);
+                } else if (itemType.equals("GUN")) {
+                    g2.setColor(Color.BLUE);
+                }
+                
+                g2.fillRect(currentX + 8, miniInvY + 8, slotSize - 16, slotSize - 16);
+                g2.setColor(Color.BLACK);
+                g2.drawRect(currentX + 8, miniInvY + 8, slotSize - 16, slotSize - 16);
+            }
+            
+            // Numero dello slot (da 1 a 5)
+            g2.setColor(Color.WHITE);
+            g2.drawString("" + (i + 1), currentX + 4, miniInvY + 12);
+        }
+
         // --- SCHERMATA / SCRITTA DI VITTORIA SE IL LIVELLO È COMPLETATO ---
         if (level.isCompleted()) {
-            // Sfondo semi-trasparente scuro al centro
             g2.setColor(new Color(0, 0, 0, 150));
             g2.fillRect(0, 0, panelWidth, panelHeight);
 
-            // Scritta principale di vittoria
             g2.setColor(new Color(0, 255, 120));
             g2.setFont(new Font("Arial", Font.BOLD, 36));
             String msg = "LIVELLO COMPLETATO!";
             int msgWidth = g2.getFontMetrics().stringWidth(msg);
             g2.drawString(msg, (panelWidth - msgWidth) / 2, panelHeight / 2 - 20);
 
-            // Sottotitolo con istruzioni per tornare al menu
             g2.setColor(Color.WHITE);
             g2.setFont(new Font("Arial", Font.PLAIN, 18));
             String subMsg = "Premi INVIO per tornare alla selezione livelli";

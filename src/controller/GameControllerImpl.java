@@ -84,8 +84,11 @@ public class GameControllerImpl extends KeyAdapter implements GameController {
                 case KeyEvent.VK_ENTER, KeyEvent.VK_SPACE -> {
                     int option = pause.getSelectedIndex();
                     switch (option) {
-                        case 0 -> panel.setCurrentState(GameState.PLAYING);
-                        case 1 -> { panel.resetPlayerPosition(); panel.setCurrentState(GameState.PLAYING); }
+                        case 0 -> panel.setCurrentState(GameState.PLAYING); // Continua
+                        case 1 -> { 
+                            panel.restartCurrentLevel(); // <-- Resetta tutto (giocatore, inventario e livello)
+                            panel.setCurrentState(GameState.PLAYING); 
+                        }
                         case 2 -> { previousState = GameState.PAUSE; panel.setCurrentState(GameState.SETTINGS); }
                         case 3 -> panel.setCurrentState(GameState.LEVEL_SELECTION);
                     }

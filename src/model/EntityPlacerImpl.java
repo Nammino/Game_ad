@@ -29,16 +29,20 @@ public class EntityPlacerImpl implements EntityPlacer {
                     double y = row * tileSize;
 
                     switch (tileChar) {
-                    case 'G', 'D' -> entities.add(new Goal(x, y));
-                    case 'E' -> entities.add(new Enemy(x, y));
-                    case 'C' -> entities.add(new Collectible(x, y)); // <-- Collezionabile
-                    case 'N' -> entities.add(new NeutralObject(x, y)); // <-- Neutro/Decorativo
-                }
+                        case 'G', 'D' -> entities.add(new Goal(x, y));
+                        case 'E' -> entities.add(new Enemy(x, y)); 
+                        case 'S' -> entities.add(new ShootingEnemy(x, y)); 
+                        case 'C' -> entities.add(new Collectible(x, y, "POTION")); // Pozione
+                        case 'W' -> entities.add(new Collectible(x, y, "SWORD"));  // Spada
+                        case 'B' -> entities.add(new Collectible(x, y, "GUN"));    // Arma a distanza
+                        case 'M' -> entities.add(new Collectible(x, y, "COIN"));   // <-- NUOVO: Moneta
+                        case 'N' -> entities.add(new NeutralObject(x, y)); 
+                    }
                 }
                 row++;
             }
         } catch (IOException e) {
-            // File degli oggetti opzionale: se non esiste, non blocca il gioco
+            // File opzionale
         }
 
         return entities;

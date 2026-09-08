@@ -1,21 +1,26 @@
 package model;
 
 import java.awt.Rectangle;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
-public class Enemy implements Entity {
+public class ShootingEnemy implements Entity {
     private Vector2D position;
     private int width;
     private int height;
     
-    private double speed = 1.0;          
-    private double visionRange = 220.0;  
+    private double speed = 0.8;
+    private double visionRange = 300.0;
     
     private int wanderTimer = 0;
-    private int currentDirection = 1;    
+    private int currentDirection = 1;
     private Random random = new Random();
 
-    public Enemy(double x, double y) {
+    private int shootCooldown = 0;
+    private List<Projectile> activeProjectiles = new ArrayList<>();
+
+    public ShootingEnemy(double x, double y) {
         this.width = GameStruct.TILE_SIZE;
         this.height = GameStruct.TILE_SIZE;
         this.position = new Vector2D(x, y);
@@ -31,13 +36,17 @@ public class Enemy implements Entity {
         return new Rectangle((int) position.getX(), (int) position.getY(), width, height);
     }
 
+    public List<Projectile> getActiveProjectiles() {
+        return activeProjectiles;
+    }
+
     @Override
     public void update(Player player) {
         if (player == null) return;
 
-        // Danno da contatto diretto con il personaggio
+        // Danno da contatto fisico se il player gli va addosso
         if (getBoundingBox().intersects(player.getBoundingBox())) {
-            player.takeDamage(1); 
+            player.takeDamage(1);
         }
 
         double playerX = player.getPosition().getX();
@@ -47,30 +56,31 @@ public class Enemy implements Entity {
         double dy = playerY - position.getY();
         double distance = Math.sqrt(dx * dx + dy * dy);
 
+        // Se il giocatore è a distanza di tiro, spara periodicamente
         if (distance <= visionRange) {
-            if (dx > 0) {
-                position.setX(position.getX() + (speed * 1.3));
-            } else if (dx < 0) {
-                position.setX(position.getX() - (speed * 1.3));
+            shootCooldown++;
+            if (shootCooldown >= 90) { // Spara ogni circa 1.5 secondi
+                shootCooldown = 0;
+                Projectile p = new Projectile(position.getX(), position.getY(), playerX, playerY, 4.0);
+                activeProjectiles.add(p);
             }
-        } 
-        else {
+        } else {
+            // Altrimenti vaga
             wanderTimer++;
             if (wanderTimer > 120) {
                 wanderTimer = 0;
                 int choice = random.nextInt(3);
-                if (choice == 0) {
-                    currentDirection = 0;
-                } else if (choice == 1) {
-                    currentDirection = 1;
-                } else {
-                    currentDirection = -1;
-                }
+                currentDirection = (choice == 0) ? 0 : (choice == 1) ? 1 : -1;
             }
-
             if (currentDirection != 0) {
-                position.setX(position.getX() + (speed * 0.5 * currentDirection));
+                position.setX(position.getX() + (speed * currentDirection));
             }
+        }
+
+        // Aggiorna e pulisce i proiettili sparati
+        activeProjectiles.removeIf(p -> !p.isActive());
+        for (Projectile p : activeProjectiles) {
+            p.update(player);
         }
     }
 }
