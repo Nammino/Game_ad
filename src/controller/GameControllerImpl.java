@@ -27,7 +27,6 @@ public class GameControllerImpl extends KeyAdapter implements GameController {
         int code = e.getKeyCode();
         GameState state = panel.getCurrentState();
 
-        // Se siamo nelle impostazioni e stiamo aspettando un tasto per il rebind
         if (state == GameState.SETTINGS) {
             SettingsPanel settings = panel.getSettingsPanel();
             if (settings.isWaitingForKey()) {
@@ -64,7 +63,6 @@ public class GameControllerImpl extends KeyAdapter implements GameController {
             if (player != null) {
                 SettingsPanel settings = panel.getSettingsPanel();
                 
-                // Usiamo ESCLUSIVAMENTE i tasti salvati (applied)
                 int jumpKey = settings.getAppliedJumpKey();
                 int leftKey = settings.getAppliedLeftKey();
                 int rightKey = settings.getAppliedRightKey();
@@ -90,7 +88,6 @@ public class GameControllerImpl extends KeyAdapter implements GameController {
             return;
         }
 
-        // Gestisce la chiusura dell'inventario con 'I' o 'ESC'
         if (state == GameState.INVENTORY) {
             if (code == KeyEvent.VK_I || code == KeyEvent.VK_ESCAPE) {
                 panel.setCurrentState(GameState.PLAYING);
@@ -224,7 +221,6 @@ public class GameControllerImpl extends KeyAdapter implements GameController {
             if (player != null) {
                 SettingsPanel settings = panel.getSettingsPanel();
                 
-                // Rilascio basato esclusivamente sui tasti applicati
                 int leftKey = settings.getAppliedLeftKey();
                 int rightKey = settings.getAppliedRightKey();
                 int jumpKey = settings.getAppliedJumpKey();

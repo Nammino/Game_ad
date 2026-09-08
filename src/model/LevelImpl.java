@@ -5,7 +5,7 @@ import java.util.ArrayList;
 
 public class LevelImpl implements Level {
 
-    private String path; // Ora rappresenta la cartella del livello
+    private String path;
     private ArrayList<String> map;
     private ArrayList<Entity> entities;
     private World world;

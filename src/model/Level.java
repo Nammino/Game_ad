@@ -16,5 +16,5 @@ public interface Level {
 
     void setCompleted(boolean completed); 
 
-    void resetLevel(); // <-- AGGIUNGI QUESTO
+    void resetLevel();
 }

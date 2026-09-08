@@ -3,7 +3,9 @@ package view;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,16 +27,13 @@ public class PlayingPanel {
     private BufferedImage potionImg;
     private BufferedImage coinImg;
     
-    // Immagini Giocatore
     private BufferedImage boyRightImg;
     private BufferedImage boyLeftImg;
     
-    // Sprite Nemici e proiettili
     private BufferedImage orcRightImg;
     private BufferedImage orcLeftImg;
     private BufferedImage rockImg;
     
-    // Sprite Armi
     private BufferedImage swordRightImg;
     private BufferedImage swordLeftImg;
     private BufferedImage bowRightImg;
@@ -42,10 +41,11 @@ public class PlayingPanel {
     private BufferedImage arrowRightImg;
     private BufferedImage arrowLeftImg;
 
-    // Sprite Oggetti Neutri
     private BufferedImage treeImg;
     private BufferedImage neutralRockImg;
     private BufferedImage bushImg;
+
+    private BufferedImage goalImg;
 
     public PlayingPanel() {
         try {
@@ -88,7 +88,6 @@ public class PlayingPanel {
             java.io.InputStream isArrowL = getClass().getResourceAsStream("/sprite/arrow_left.png");
             if (isArrowL != null) arrowLeftImg = javax.imageio.ImageIO.read(isArrowL);
 
-            // Caricamento Sprite Oggetti Neutri
             java.io.InputStream isTree = getClass().getResourceAsStream("/sprite/tree.png");
             if (isTree != null) treeImg = javax.imageio.ImageIO.read(isTree);
 
@@ -97,6 +96,9 @@ public class PlayingPanel {
 
             java.io.InputStream isBush = getClass().getResourceAsStream("/sprite/bush.png");
             if (isBush != null) bushImg = javax.imageio.ImageIO.read(isBush);
+
+            java.io.InputStream isGoal = getClass().getResourceAsStream("/sprite/door.png");
+            if (isGoal != null) goalImg = javax.imageio.ImageIO.read(isGoal);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -107,7 +109,6 @@ public class PlayingPanel {
         int panelWidth = panel.getWidth();
         int panelHeight = panel.getHeight();
 
-        // --- SFONDO ---
         g2.setColor(new Color(107, 140, 255));
         g2.fillRect(0, 0, panelWidth, panelHeight);
 
@@ -121,7 +122,6 @@ public class PlayingPanel {
 
         if (player == null || map == null || map.isEmpty()) return;
 
-        // --- CONTROLLO MORTE / RESET ---
         if (player.getHealth() <= 0) {
             panel.restartCurrentLevel(); 
             return;
@@ -129,7 +129,6 @@ public class PlayingPanel {
 
         int tileSize = GameStruct.TILE_SIZE;
 
-        // --- CAMERA ---
         int playerX = (int) Math.round(player.getPosition().getX());
         int playerY = (int) Math.round(player.getPosition().getY()); 
         
@@ -154,7 +153,6 @@ public class PlayingPanel {
 
         g2.translate(-cameraX, -cameraY);
 
-        // --- PREPARAZIONE LISTA OGGETTI USABILI ---
         List<model.ItemInstance> allItems = player.getInventory().getItems();
         List<model.ItemInstance> usableItems = new ArrayList<>();
         
@@ -171,7 +169,6 @@ public class PlayingPanel {
             activeItemType = usableItems.get(selectedSlot).getType();
         }
 
-        // --- CONTROLLO COLLISIONE CONTINUA ANIMAZIONE SPADA ---
         if (panel instanceof GamePanel) {
             GamePanel gp = (GamePanel) panel;
             if (gp.getSwordAnimationFrames() > 0 && activeItemType.equals("SWORD")) {
@@ -194,7 +191,6 @@ public class PlayingPanel {
             }
         }
 
-        // Disegno Mappa
         for (int row = 0; row < map.size(); row++) {
             String line = map.get(row);
             for (int col = 0; col < line.length(); col++) {
@@ -222,10 +218,8 @@ public class PlayingPanel {
             }
         }
 
-        // --- DISEGNO E GESTIONE DELLE ENTITÀ ---
         if (level.getEntities() != null) {
             
-            // 1. Oggetti Neutri (Albero raddoppiato rispetto a prima, Roccia rimpicciolita, Cespuglio inviato prima)
             for (Entity entity : level.getEntities()) {
                 if (entity instanceof NeutralObject neutral) {
                     int nx = (int) Math.round(neutral.getPosition().getX());
@@ -241,21 +235,18 @@ public class PlayingPanel {
 
                     if ("TREE".equals(nType)) {
                         neutralImg = treeImg;
-                        // Albero ingrandito del doppio rispetto alla misura standard precedente (4 volte la tile)
                         drawWidth = tileSize * 4;
                         drawHeight = tileSize * 4;
                         drawX = nx - tileSize * 3 / 2; 
                         drawY = ny - tileSize * 3;     
                     } else if ("ROCK".equals(nType)) {
                         neutralImg = neutralRockImg;
-                        // Roccia rimpicciolita (50% della tile)
                         drawWidth = (int) (tileSize * 0.5);
                         drawHeight = (int) (tileSize * 0.5);
                         drawX = nx + (tileSize - drawWidth) / 2;
                         drawY = ny + (tileSize - drawHeight);
                     } else if ("BUSH".equals(nType)) {
                         neutralImg = bushImg;
-                        // Cespuglio invariato (2 volte la tile)
                         drawWidth = tileSize * 2;
                         drawHeight = tileSize * 2;
                         drawX = nx - tileSize / 2;
@@ -273,7 +264,6 @@ public class PlayingPanel {
                 }
             }
 
-            // 2. Collezionabili
             level.getEntities().removeIf(entity -> {
                 if (entity instanceof Collectible col) {
                     col.update(player); 
@@ -317,21 +307,38 @@ public class PlayingPanel {
                 return false;
             });
 
-            // 3. Goal e Nemici
             for (Entity entity : level.getEntities()) {
                 if (entity instanceof Goal goal) {
                     int gx = (int) Math.round(goal.getPosition().getX());
                     int gy = (int) Math.round(goal.getPosition().getY());
 
-                    g2.setColor(new Color(0, 200, 100));
-                    g2.fillRect(gx, gy, tileSize, tileSize);
-                    g2.setColor(Color.WHITE);
-                    g2.setFont(new Font("Arial", Font.BOLD, 18));
-                    g2.drawString("D", gx + 11, gy + 24);
-                    g2.setColor(Color.BLACK);
-                    g2.drawRect(gx, gy, tileSize, tileSize);
+                    int goalWidth = tileSize * 2;
+                    int goalHeight = tileSize * 2;
+                    int drawX = gx - (tileSize / 2);
+                    int drawY = gy - tileSize;
 
-                    if (player.getBoundingBox().intersects(goal.getBoundingBox())) {
+                    if (goalImg != null) {
+                        g2.drawImage(goalImg, drawX, drawY, goalWidth, goalHeight, null);
+                    } else {
+                        g2.setColor(new Color(0, 200, 100));
+                        g2.fillRect(drawX, drawY, goalWidth, goalHeight);
+                        g2.setColor(Color.WHITE);
+                        g2.setFont(new Font("Arial", Font.BOLD, 24));
+                        g2.drawString("D", drawX + goalWidth / 3, drawY + goalHeight / 2);
+                        g2.setColor(Color.BLACK);
+                        g2.drawRect(drawX, drawY, goalWidth, goalHeight);
+                    }
+
+                    int shrinkW = goalWidth / 2; 
+                    int shrinkH = goalHeight / 2; 
+                    java.awt.Rectangle centerGoalBox = new java.awt.Rectangle(
+                        drawX + (goalWidth - shrinkW) / 2, 
+                        drawY + (goalHeight - shrinkH) / 2, 
+                        shrinkW, 
+                        shrinkH
+                    );
+
+                    if (player.getBoundingBox().intersects(centerGoalBox)) {
                         level.setCompleted(true);
                         if (model.getPlayer() != null && model.getPlayer().getInventory() != null) {
                             model.getPlayer().getInventory().clear();
@@ -352,8 +359,8 @@ public class PlayingPanel {
                         g2.setFont(new Font("Arial", Font.BOLD, 18));
                         g2.drawString("E", ex + 10, ey + 24);
                     }
-                
-                } else if (entity instanceof ShootingEnemy shootingEnemy) {
+                }
+                else if (entity instanceof ShootingEnemy shootingEnemy) {
                     int sx = (int) Math.round(shootingEnemy.getPosition().getX());
                     int sy = (int) Math.round(shootingEnemy.getPosition().getY());
 
@@ -386,7 +393,6 @@ public class PlayingPanel {
             }
         }
 
-        // --- Disegno Giocatore ---
         int px = (int) Math.round(player.getPosition().getX());
         int py = (int) Math.round(player.getPosition().getY());
         
@@ -399,7 +405,6 @@ public class PlayingPanel {
             g2.fillRect(px, py, tileSize, tileSize);
         }
 
-        // --- ANIMAZIONE SPADA ---
         if (panel instanceof GamePanel) {
             GamePanel gp = (GamePanel) panel;
             if (gp.getSwordAnimationFrames() > 0 && activeItemType.equals("SWORD")) {
@@ -418,7 +423,6 @@ public class PlayingPanel {
             }
         }
 
-        // --- ANIMAZIONE ARCO ---
         if (panel instanceof GamePanel) {
             GamePanel gp = (GamePanel) panel;
             if (gp.getBowAnimationFrames() > 0 && activeItemType.equals("GUN")) {
@@ -437,7 +441,6 @@ public class PlayingPanel {
             }
         }
 
-        // --- FRECCE DEL GIOCATORE IN VOLO ---
         if (panel instanceof GamePanel) {
             GamePanel gp = (GamePanel) panel;
             if (gp.getPlayerProjectiles() != null) {
@@ -487,10 +490,8 @@ public class PlayingPanel {
             }
         }
 
-        // --- RIPRISTINO CAMERA PER L'HUD ---
         g2.translate(cameraX, cameraY);
 
-        // --- HUD / BARRA VITA ---
         g2.setColor(Color.WHITE);
         g2.setFont(new Font("Arial", Font.BOLD, 14));
         g2.drawString("A/D: Muovi | SPAZIO: Salta | Rotella: Seleziona Slot | Click SX: Usa Oggetto", 20, 25);
@@ -513,7 +514,6 @@ public class PlayingPanel {
         g2.setFont(new Font("Arial", Font.BOLD, 11));
         g2.drawString("HP: " + player.getHealth() + " / " + player.getMaxHealth(), barX + 50, barY + 14);
 
-        // --- MINI INVENTARIO ---
         int slotSize = 40;
         int slotSpacing = 10;
         int miniInvX = 20;
@@ -572,7 +572,6 @@ public class PlayingPanel {
             g2.drawString("" + (i + 1), currentX + 4, miniInvY + 12);
         }
 
-        // --- SCHERMATA DI VITTORIA ---
         if (level.isCompleted()) {
             g2.setColor(new Color(0, 0, 0, 150));
             g2.fillRect(0, 0, panelWidth, panelHeight);

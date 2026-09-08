@@ -24,7 +24,7 @@ public class WorldSelectionPanel {
     public void navigateVertical(int direction, GameStruct model) {
         if (model == null) return;
         int totalWorlds = model.getWorlds().size();
-        int total = totalWorlds + 1; // Mondi + Tasto Indietro
+        int total = totalWorlds + 1;
         if (total == 1) return;
         selectedWorldIndex = (selectedWorldIndex + direction + total) % total;
     }

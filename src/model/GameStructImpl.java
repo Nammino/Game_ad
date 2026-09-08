@@ -40,7 +40,6 @@ public class GameStructImpl implements GameStruct {
 
                 int worldId = 1;
                 for (File folder : worldFolders) {
-                    // Prende il nome della cartella (es: world_1, world_2)
                     String worldName = folder.getName();
                     
                     World world = new WorldImpl(this, worldId, worldName, folder.getPath());

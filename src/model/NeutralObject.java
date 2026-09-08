@@ -2,7 +2,7 @@ package model;
 
 public class NeutralObject extends Object {
 
-    private String type; // E.g., "TREE", "ROCK", "BUSH"
+    private String type; 
 
     public NeutralObject(double x, double y, String type) {
         super();
@@ -17,7 +17,5 @@ public class NeutralObject extends Object {
     }
 
     @Override
-    public void update(Player player) {
-        // Nessun effetto sul player
-    }
+    public void update(Player player) {}
 }

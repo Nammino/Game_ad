@@ -19,14 +19,12 @@ public class InventoryPanel {
     private BufferedImage swordImg;
     private BufferedImage bowImg;
     
-    // Gestione dello scorrimento in pixel della lista principale
     private int scrollOffset = 0;
 
-    // Rettangoli di interazione: 50 per la lista, ma solo i primi 4 per i slot rapidi (il 5° è vuoto)
     private final Rectangle[] inventoryItemBounds = new Rectangle[50];
     private final Rectangle[] hotbarSlotBounds = new Rectangle[5];     
     
-    private int selectedInventoryItemIndex = -1; // Indice dell'oggetto cliccato nella lista da assegnare
+    private int selectedInventoryItemIndex = -1; 
 
     public InventoryPanel() {
         try {
@@ -53,11 +51,9 @@ public class InventoryPanel {
         int panelWidth = panel.getWidth();
         int panelHeight = panel.getHeight();
 
-        // Sfondo scuro semi-trasparente sopra il gioco
         g2.setColor(new Color(20, 20, 30, 230));
         g2.fillRect(0, 0, panelWidth, panelHeight);
 
-        // Titolo dell'inventario
         g2.setColor(Color.WHITE);
         g2.setFont(new Font("Arial", Font.BOLD, 32));
         String title = "INVENTARIO DEL PERSONAGGIO";
@@ -68,7 +64,6 @@ public class InventoryPanel {
         Player player = model.getPlayer();
         List<ItemInstance> allItems = player.getInventory().getItems();
 
-        // Riquadro centrale principale
         int boxWidth = 520;
         int boxHeight = 420;
         int boxX = (panelWidth - boxWidth) / 2;
@@ -79,7 +74,6 @@ public class InventoryPanel {
         g2.setColor(new Color(100, 100, 150));
         g2.drawRoundRect(boxX, boxY, boxWidth, boxHeight, 20, 20);
 
-        // --- SEZIONE 1: LISTA DEGLI OGGETTI RACCOLTI ---
         int listWidth = boxWidth - 40;
         int listHeight = boxHeight - 130;
         int listX = boxX + 20;
@@ -106,7 +100,6 @@ public class InventoryPanel {
             if (scrollOffset > maxScroll) scrollOffset = maxScroll;
             if (scrollOffset < 0) scrollOffset = 0;
 
-            // Area di clip per la lista
             java.awt.Shape oldClip = g2.getClip();
             g2.setClip(listX, listY, listWidth, listHeight);
 
@@ -155,7 +148,6 @@ public class InventoryPanel {
             g2.setClip(oldClip);
         }
 
-        // --- SEZIONE 2: MINI INVENTARIO (BARRA RAPIDA IN BASSO - 4 SLOT UTILI + 1 VUOTO) ---
         int slotSize = 45;
         int slotSpacing = 10;
         int totalHotbarWidth = (5 * slotSize) + (4 * slotSpacing);
@@ -166,12 +158,11 @@ public class InventoryPanel {
         g2.setFont(new Font("Arial", Font.BOLD, 12));
         g2.drawString("Slot Rapidi (Primi 4 modificabili, il 5° è vuoto):", hotbarX, hotbarY - 10);
 
-        // Estraiamo gli oggetti usabili limitati ai primi 4 slot
         List<ItemInstance> usableItems = new java.util.ArrayList<>();
         for (ItemInstance item : allItems) {
             if (!item.getType().equals("COIN")) {
                 usableItems.add(item);
-                if (usableItems.size() == 4) break; // Massimo 4 oggetti nei slot rapidi
+                if (usableItems.size() == 4) break; 
             }
         }
 
@@ -185,7 +176,6 @@ public class InventoryPanel {
             g2.setColor(new Color(120, 120, 150));
             g2.drawRect(currentX, hotbarY, slotSize, slotSize);
 
-            // Il 5° slot (indice 4) rimane sempre vuoto per scelta di design
             if (i < 4 && i < usableItems.size()) {
                 ItemInstance itemInst = usableItems.get(i);
                 String itemType = itemInst.getType();
@@ -211,7 +201,6 @@ public class InventoryPanel {
             g2.drawString("" + (i + 1), currentX + 4, hotbarY + 12);
         }
 
-        // Istruzioni in basso
         g2.setColor(Color.LIGHT_GRAY);
         g2.setFont(new Font("Arial", Font.BOLD, 13));
         String footer = "Usa la Rotellina per scorrere | Premi I o ESC per tornare al gioco";
@@ -227,7 +216,6 @@ public class InventoryPanel {
         if (player == null) return false;
         List<ItemInstance> allItems = player.getInventory().getItems();
 
-        // 1. Clic su un oggetto della lista principale
         for (int i = 0; i < allItems.size() && i < inventoryItemBounds.length; i++) {
             if (inventoryItemBounds[i].contains(p)) {
                 selectedInventoryItemIndex = i;
@@ -235,7 +223,6 @@ public class InventoryPanel {
             }
         }
 
-        // 2. Clic su uno slot rapido in basso (CONSENTITO SOLO PER I PRIMI 4 SLOT, il 5° è bloccato perché vuoto)
         for (int i = 0; i < 4; i++) {
             if (hotbarSlotBounds[i].contains(p)) {
                 if (selectedInventoryItemIndex != -1 && selectedInventoryItemIndex < allItems.size()) {

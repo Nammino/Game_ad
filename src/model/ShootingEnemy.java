@@ -24,7 +24,7 @@ public class ShootingEnemy implements Entity {
     
     private boolean facingRight = true;
     
-    private int damageCooldown = 0; // Timer per il cooldown del danno da contatto
+    private int damageCooldown = 0; 
 
     public ShootingEnemy(double x, double y) {
         this.width = GameStruct.TILE_SIZE;
@@ -75,21 +75,19 @@ public class ShootingEnemy implements Entity {
     public void update(Player player, ArrayList<String> map) {
         if (player == null) return;
 
-        // --- GESTIONE COOLDOWN DANNO DA CONTATTO ---
         if (damageCooldown > 0) {
             damageCooldown--;
         }
 
         if (getBoundingBox().intersects(player.getBoundingBox())) {
             if (damageCooldown == 0) {
-                player.takeDamage(5); // Toglie 5 di vita
-                damageCooldown = 180; // 180 frame = circa 3 secondi di attesa prima del prossimo danno
+                player.takeDamage(5); 
+                damageCooldown = 180; 
             }
         }
 
-        // --- GESTIONE GRAVITÀ ---
         if (!grounded) {
-            velocity.setY(velocity.getY() + 0.5); // Forza di gravità
+            velocity.setY(velocity.getY() + 0.5); 
         }
 
         double playerX = player.getPosition().getX();
@@ -99,7 +97,6 @@ public class ShootingEnemy implements Entity {
         double dy = playerY - position.getY();
         double distance = Math.sqrt(dx * dx + dy * dy);
 
-        // Se il giocatore è a distanza di tiro
         if (distance <= visionRange) {
             shootCooldown++;
             if (shootCooldown >= 80) {  
@@ -133,7 +130,6 @@ public class ShootingEnemy implements Entity {
             }
         }
 
-        // Rimozione proiettili inattivi e aggiornamento degli stessi
         activeProjectiles.removeIf(p -> !p.isActive());
         for (Projectile p : activeProjectiles) {
             p.update(player, map);

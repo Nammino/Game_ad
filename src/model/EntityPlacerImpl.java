@@ -32,19 +32,18 @@ public class EntityPlacerImpl implements EntityPlacer {
                         case 'G', 'D' -> entities.add(new Goal(x, y));
                         case 'E' -> entities.add(new Enemy(x, y)); 
                         case 'S' -> entities.add(new ShootingEnemy(x, y)); 
-                        case 'C' -> entities.add(new Collectible(x, y, "POTION")); // Pozione
-                        case 'W' -> entities.add(new Collectible(x, y, "SWORD"));  // Spada
-                        case 'B' -> entities.add(new Collectible(x, y, "GUN"));    // Arma a distanza
-                        case 'M' -> entities.add(new Collectible(x, y, "COIN"));   // Moneta
-                        case 'T', 'N' -> entities.add(new NeutralObject(x, y, "TREE")); // Albero (gestisce sia T che N)
-                        case 'R' -> entities.add(new NeutralObject(x, y, "ROCK")); // Roccia neutra
-                        case 'U' -> entities.add(new NeutralObject(x, y, "BUSH")); // Cespuglio
+                        case 'C' -> entities.add(new Collectible(x, y, "POTION")); 
+                        case 'W' -> entities.add(new Collectible(x, y, "SWORD"));  
+                        case 'B' -> entities.add(new Collectible(x, y, "GUN"));    
+                        case 'M' -> entities.add(new Collectible(x, y, "COIN"));   
+                        case 'T', 'N' -> entities.add(new NeutralObject(x, y, "TREE")); 
+                        case 'R' -> entities.add(new NeutralObject(x, y, "ROCK")); 
+                        case 'U' -> entities.add(new NeutralObject(x, y, "BUSH")); 
                     }
                 }
                 row++;
             }
         } catch (IOException e) {
-            // File opzionale
         }
 
         return entities;

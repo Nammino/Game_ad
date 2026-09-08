@@ -23,7 +23,6 @@ public class CollisionManagerImpl implements CollisionManager {
 
         boolean levelCompleted = false;
 
-        // --- GESTIONE ASSE Y ---
         if (entity.isGrounded() && entity.getVelocity().getY() >= 0) {
             entity.getVelocity().setY(0);
         } else {
@@ -43,7 +42,6 @@ public class CollisionManagerImpl implements CollisionManager {
             for (int col = startCol; col <= endCol; col++) {
                 char tile = line.charAt(col);
                 
-                // Se l'entità è il Player, controlliamo anche il completamento del livello
                 if (tile == '=' && entity instanceof Player) {
                     Rectangle tileBounds = new Rectangle(col * tileSize, row * tileSize, tileSize, tileSize);
                     if (entityBoundsY.intersects(tileBounds)) {
@@ -68,7 +66,6 @@ public class CollisionManagerImpl implements CollisionManager {
             }
         }
 
-        // --- GESTIONE ASSE X ---
         entity.getPosition().setX(entity.getPosition().getX() + entity.getVelocity().getX());
 
         int mapWidthPixels = map.get(0).length() * tileSize;

@@ -12,16 +12,14 @@ public class Player implements Entity {
     private int maxHealth;
     private Inventory inventory;
     
-    // Stati di movimento e direzione
     private boolean grounded = false;
     private boolean left = false;
     private boolean right = false;
     private boolean jumpRequested = false;
     private boolean facingRight = true;
 
-    // Costruttore vuoto richiesto da GameStructImpl (es. new Player())
     public Player() {
-        this(100, 100); // Posizione di default
+        this(100, 100); 
     }
 
     public Player(double x, double y) {
@@ -72,7 +70,6 @@ public class Player implements Entity {
         return inventory;
     }
 
-    // --- Gestione Direzione Sprite ---
     public boolean isFacingRight() {
         return facingRight;
     }
@@ -81,7 +78,6 @@ public class Player implements Entity {
         this.facingRight = facingRight;
     }
 
-    // --- Metodi di Movimento e Stati richiesti da Controller e CollisionManager ---
     public boolean isGrounded() {
         return grounded;
     }
@@ -97,7 +93,7 @@ public class Player implements Entity {
     public void setLeft(boolean left) {
         this.left = left;
         if (left) {
-            this.facingRight = false; // Se va a sinistra, si gira a sinistra
+            this.facingRight = false; 
         }
     }
 
@@ -108,7 +104,7 @@ public class Player implements Entity {
     public void setRight(boolean right) {
         this.right = right;
         if (right) {
-            this.facingRight = true; // Se va a destra, si gira a destra
+            this.facingRight = true; 
         }
     }
 
@@ -122,16 +118,13 @@ public class Player implements Entity {
 
     @Override
     public void update(Player player) {
-        // Metodo vuoto se richiesto dall'interfaccia Entity
     }
     
-    // --- Gestisce solo la velocità idddddn base ai comandi, il movimento vero e proprio lo fa il CollisionManager ---
     public void update(ArrayList<String> map) {
         double gravity = 0.5;
         double moveSpeed = 4.0;
         double jumpStrength = -11;
 
-        // Gestione movimento orizzontale (Velocità X)
         double vx = 0;
         if (left) {
             vx = -moveSpeed;
@@ -141,14 +134,12 @@ public class Player implements Entity {
         }
         velocity.setX(vx);
 
-        // Gestione salto (se a terra e viene richiesto il salto)
         if (jumpRequested && grounded) {
             velocity.setY(jumpStrength);
             grounded = false;
             jumpRequested = false;
         }
 
-        // Applicazione gravità alla velocità Y se non è a terra
         if (!grounded) {
             velocity.setY(velocity.getY() + gravity);
         }

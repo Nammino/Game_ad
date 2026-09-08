@@ -1,17 +1,17 @@
 package model;
 
 public class ItemInstance {
-    private String type; // "POTION", "SWORD", "GUN", "COIN"
-    private int usesLeft; // Numero di utilizzi rimasti
+    private String type; 
+    private int usesLeft; 
 
     public ItemInstance(String type) {
         this.type = type;
         if (type.equals("SWORD")) {
-            this.usesLeft = 15; // Ad esempio, la spada dura 15 utilizzi
+            this.usesLeft = 15; 
         } else if (type.equals("GUN")) {
-            this.usesLeft = 10; // La pistola dura 10 utilizzi
+            this.usesLeft = 10; 
         } else {
-            this.usesLeft = 1;  // Pozioni o altri oggetti a singolo utilizzo
+            this.usesLeft = 1;  
         }
     }
 

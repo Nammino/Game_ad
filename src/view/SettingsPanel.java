@@ -35,7 +35,6 @@ public class SettingsPanel {
     private int tempResIdx = 0, tempFpsIdx = 1;
     private boolean tempFullScreen = false, tempVSync = true;
 
-    // Configurazione Tasti (Controlli)
     private int tempJumpKey = KeyEvent.VK_SPACE;
     private int tempLeftKey = KeyEvent.VK_LEFT;
     private int tempRightKey = KeyEvent.VK_RIGHT;
@@ -49,7 +48,6 @@ public class SettingsPanel {
     private int appliedLeftKey = KeyEvent.VK_LEFT;
     private int appliedRightKey = KeyEvent.VK_RIGHT;
 
-    // Flag per indicare se stiamo aspettando la pressione di un tasto per la riconfigurazione
     private boolean waitingForKey = false;
     private int controlIndexToRebind = -1;
 
@@ -60,7 +58,6 @@ public class SettingsPanel {
         for (int i = 0; i < tabBounds.length; i++) tabBounds[i] = new Rectangle();
         for (int i = 0; i < optionBounds.length; i++) optionBounds[i] = new Rectangle();
         
-        // Carica i tasti salvati dal file all'avvio
         loadSettingsFromFile();
     }
 
@@ -108,7 +105,6 @@ public class SettingsPanel {
     public void handleKeyRebind(int keyCode) {
         if (!waitingForKey) return;
         
-        // Controlla se il tasto è già assegnato a un altro comando
         boolean alreadyUsed = false;
         if (controlIndexToRebind != 0 && tempJumpKey == keyCode) alreadyUsed = true;
         if (controlIndexToRebind != 1 && tempLeftKey == keyCode) alreadyUsed = true;
@@ -365,7 +361,6 @@ public class SettingsPanel {
 
         if (System.currentTimeMillis() - statusMessageTime < 2500 && !statusMessage.isEmpty()) {
             g2.setFont(new Font("Arial", Font.BOLD, 16));
-            // Se il messaggio contiene "Errore", lo coloriamo di rosso, altrimenti verde
             g2.setColor(statusMessage.contains("Errore") ? Color.RED : Color.GREEN);
             g2.drawString(statusMessage, getCenteredX(g2, statusMessage, panelWidth), panelHeight - 130);
         }

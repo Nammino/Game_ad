@@ -25,7 +25,6 @@ public class PausePanel {
         int width = panel.getWidth();
         int height = panel.getHeight();
 
-        // Copre interamente lo schermo dinamico
         g2.setColor(new Color(0, 0, 0, 180));
         g2.fillRect(0, 0, width, height);
 

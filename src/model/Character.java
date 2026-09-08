@@ -4,16 +4,15 @@ import java.awt.Rectangle;
 
 public abstract class Character implements Entity {
 
-    private Vector2D position;
-    private Vector2D velocity;
-    private Rectangle boundingBox;
-    private boolean grounded;
+    protected Vector2D position;
+    protected Vector2D velocity;
+    protected Rectangle boundingBox;
+    protected boolean grounded;
 
     public Character() {
         this.position = new Vector2D(0, 0);
         this.velocity = new Vector2D(0, 0);
         this.boundingBox = new Rectangle(0, 0, GameStruct.TILE_SIZE, GameStruct.TILE_SIZE);
-        this.grounded = false;
     }
 
     @Override
@@ -26,7 +25,6 @@ public abstract class Character implements Entity {
         return this.boundingBox;
     }
 
-    // --- MODIFICATO: accetta il Player come l'interfaccia Entity ---
     @Override
     public abstract void update(Player player);
 
@@ -42,3 +40,4 @@ public abstract class Character implements Entity {
         this.grounded = grounded;
     }
 }
+

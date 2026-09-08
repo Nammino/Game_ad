@@ -3,7 +3,6 @@ package view;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.event.MouseAdapter;
@@ -34,6 +33,7 @@ public class GamePanel extends JPanel {
     private GameStruct model;
     private GameState currentState = GameState.MENU;
 
+    private final MenuPanel menuPanel;
     private final SettingsPanel settingsPanel;
     private final WorldSelectionPanel worldSelectionPanel;
     private final LevelSelectionPanel levelSelectionPanel;
@@ -44,15 +44,12 @@ public class GamePanel extends JPanel {
     private final CollisionManager collisionManager;
     private List<Projectile> playerProjectiles = new ArrayList<>();
     
-    // Variabile per gestire la durata dell'animazione della spada (in fotogrammi)
     private int swordAnimationFrames = 0;
     
     private int selectedLevelIndex = 0;
     private int currentOptionIndex = 0;
     private int selectedSlot = 0;
     private int bowAnimationFrames = 0;
-    
-    private final String[] menuOptions = {"Nuova Partita", "Carica Partita", "Impostazioni", "Esci"};
 
     private Timer gameLoop;
 
@@ -61,6 +58,7 @@ public class GamePanel extends JPanel {
         this.setBackground(Color.BLACK);
         this.setFocusable(true);
 
+        this.menuPanel = new MenuPanel();
         this.settingsPanel = new SettingsPanel();
         this.worldSelectionPanel = new WorldSelectionPanel(); 
         this.levelSelectionPanel = new LevelSelectionPanel();
@@ -69,30 +67,24 @@ public class GamePanel extends JPanel {
         this.inventoryPanel = new InventoryPanel();
         this.collisionManager = new CollisionManagerImpl();
 
-        // GAME LOOP: blocca tutto se il livello è completato o se non siamo in PLAYING
         this.gameLoop = new Timer(16, e -> {
             if (currentState == GameState.PLAYING && model != null) {
                 if (model.getCurrentWorld() != null && !model.getCurrentWorld().getLevels().isEmpty()) {
                     Level currentLevel = model.getCurrentWorld().getLevels().get(selectedLevelIndex);
                     
                     if (!currentLevel.isCompleted()) {
-                        // 1. Aggiorna i calcoli della velocità del player dai comandi
                         model.getPlayer().update(currentLevel.getMap());
                         
-                        // 2. Esegui le collisioni con i tile e aggiorna la posizione in modo sicuro per il player!
                         collisionManager.checkTileCollisions(model.getPlayer(), currentLevel.getMap());
 
-                        // Decrementa il contatore dell'animazione della spada ad ogni fotogramma
                         if (swordAnimationFrames > 0) {
                             swordAnimationFrames--;
                         }
                         
-                        // Aggiorna proiettili del giocatore
                         playerProjectiles.removeIf(p -> {
                             return false; 
                         });
 
-                        // Aggiorna entità, nemici (Enemy e ShootingEnemy) applicando gravità e collisioni con i tile
                         if (currentLevel.getEntities() != null) {
                             for (Entity entity : currentLevel.getEntities()) {
                                 if (entity instanceof ShootingEnemy shootingEnemy) {
@@ -155,19 +147,15 @@ public class GamePanel extends JPanel {
                                     repaint();
                                 }
                             } else if (activeItem.getType().equals("SWORD")) {
-                                activeItem.use(); // Scala un utilizzo
-                                
-                                // Attiva l'animazione della spada per 10 fotogrammi
+                                activeItem.use(); 
                                 swordAnimationFrames = 10; 
                                 
-                                // EFFETTO SPADA DIREZIONALE: Controlla i nemici sul lato corretto
                                 if (currentLevel.getEntities() != null) {
                                     currentLevel.getEntities().removeIf(entity -> {
                                         if (entity instanceof Enemy || entity instanceof ShootingEnemy) {
                                             int slashWidth = 30;  
                                             int slashHeight = 12; 
                                             
-                                            // Se guarda a destra spawna a destra, se guarda a sinistra spawna a sinistra
                                             int slashX = player.isFacingRight() ? 
                                                 (int) player.getPosition().getX() + GameStruct.TILE_SIZE : 
                                                 (int) player.getPosition().getX() - slashWidth;
@@ -188,7 +176,7 @@ public class GamePanel extends JPanel {
                                 
                             } else if (activeItem.getType().equals("GUN")) {
                                 activeItem.use(); 
-                                bowAnimationFrames = 10; // <-- Attiva l'animazione dell'arco per 10 frame
+                                bowAnimationFrames = 10; 
                                 
                                 double pX = player.getPosition().getX();
                                 double pY = player.getPosition().getY();
@@ -235,16 +223,13 @@ public class GamePanel extends JPanel {
             }
         });
 
-        // GESTIONE DELLA ROTELLINA DEL MOUSE (Aggiornata per l'inventario)
         this.addMouseWheelListener(e -> {
             int notches = e.getWheelRotation();
             
             if (currentState == GameState.INVENTORY) {
-                // Scorre l'inventario verticalmente in pixel
                 inventoryPanel.handleWheel(notches * 20);
                 repaint();
             } else {
-                // Comportamento standard per la selezione degli slot rapidi
                 selectedSlot += notches;
                 if (selectedSlot > 4) {
                     selectedSlot = 0;
@@ -265,6 +250,7 @@ public class GamePanel extends JPanel {
     public GameState getCurrentState() { return currentState; }
     public void setCurrentState(GameState state) { this.currentState = state; }
 
+    public MenuPanel getMenuPanel() { return menuPanel; }
     public SettingsPanel getSettingsPanel() { return settingsPanel; }
     public WorldSelectionPanel getWorldSelectionPanel() { return worldSelectionPanel; }
     public LevelSelectionPanel getLevelSelectionPanel() { return levelSelectionPanel; }
@@ -284,7 +270,8 @@ public class GamePanel extends JPanel {
     public int getCurrentOptionIndex() { return currentOptionIndex; }
 
     public void navigateMenu(int direction) {
-        currentOptionIndex = (currentOptionIndex + direction + menuOptions.length) % menuOptions.length;
+        int maxOptions = menuPanel.getMenuOptions().length;
+        currentOptionIndex = (currentOptionIndex + direction + maxOptions) % maxOptions;
     }
 
     public void resetPlayerPosition() {
@@ -303,7 +290,6 @@ public class GamePanel extends JPanel {
             currentLevel.resetLevel(); 
 
             if (model.getPlayer() != null && model.getPlayer().getInventory() != null) {
-                // Svuota completamente l'inventario (oggetti e istanze)
                 model.getPlayer().getInventory().clear();
             }
             resetPlayerPosition();
@@ -316,7 +302,7 @@ public class GamePanel extends JPanel {
         Graphics2D g2 = (Graphics2D) g;
 
         switch (currentState) {
-            case MENU -> drawMenu(g2);
+            case MENU -> menuPanel.draw(g2, this);
             case SETTINGS -> settingsPanel.draw(g2, this);
             case WORLD_SELECTION -> worldSelectionPanel.draw(g2, this, model);
             case LEVEL_SELECTION -> levelSelectionPanel.draw(g2, this, model);
@@ -327,36 +313,6 @@ public class GamePanel extends JPanel {
             }
             case INVENTORY -> inventoryPanel.draw(g2, this, model);
         }
-    }
-
-    private void drawMenu(Graphics2D g2) {
-        g2.setFont(new Font("Arial", Font.BOLD, 38));
-        g2.setColor(Color.YELLOW);
-        String title = "HELLO KITTY GAME";
-        FontMetrics titleMetrics = g2.getFontMetrics();
-        g2.drawString(title, (getWidth() - titleMetrics.stringWidth(title)) / 2, 120);
-
-        g2.setFont(new Font("Arial", Font.BOLD, 22));
-        FontMetrics optionMetrics = g2.getFontMetrics();
-
-        for (int i = 0; i < menuOptions.length; i++) {
-            String text = menuOptions[i];
-            int x = (getWidth() - optionMetrics.stringWidth(text)) / 2;
-            int y = 250 + (i * 50);
-
-            if (i == currentOptionIndex) {
-                g2.setColor(Color.RED);
-                g2.drawString("> " + text + " <", x - 25, y);
-            } else {
-                g2.setColor(Color.WHITE);
-                g2.drawString(text, x, y);
-            }
-        }
-
-        g2.setFont(new Font("Arial", Font.PLAIN, 14));
-        g2.setColor(Color.GRAY);
-        String hint = "Usa le FRECCE per spostarsi e PREMI ENTER per selezionare";
-        g2.drawString(hint, (getWidth() - g2.getFontMetrics().stringWidth(hint)) / 2, 530);
     }
     
     public int getSelectedSlot() { 
