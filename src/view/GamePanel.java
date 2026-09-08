@@ -99,7 +99,7 @@ public class GamePanel extends JPanel {
                                     shootingEnemy.update(model.getPlayer(), currentLevel.getMap());
                                     collisionManager.checkTileCollisions(shootingEnemy, currentLevel.getMap());
                                 } else if (entity instanceof Enemy enemy) {
-                                    enemy.update(model.getPlayer()); // <-- Rimosso currentLevel.getMap() qui dentro
+                                    enemy.update(model.getPlayer()); 
                                     collisionManager.checkTileCollisions(enemy, currentLevel.getMap());
                                 } else {
                                     entity.update(model.getPlayer());
@@ -124,6 +124,12 @@ public class GamePanel extends JPanel {
                 } else if (currentState == GameState.WORLD_SELECTION) {
                     if (worldSelectionPanel.handleMouseClick(e.getPoint(), GamePanel.this, model)) {
                         repaint();
+                    }
+                } else if (currentState == GameState.INVENTORY) {
+                    if (model != null && model.getPlayer() != null) {
+                        if (inventoryPanel.handleMouseClick(e.getPoint(), model.getPlayer())) {
+                            repaint();
+                        }
                     }
                 } else if (currentState == GameState.PLAYING && e.getButton() == MouseEvent.BUTTON1) {
                     if (model != null && model.getPlayer() != null) {

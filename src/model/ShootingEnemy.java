@@ -7,6 +7,8 @@ import java.util.Random;
 
 public class ShootingEnemy implements Entity {
     private Vector2D position;
+    private Vector2D velocity;
+    private boolean grounded = false;
     private int width;
     private int height;
     
@@ -17,19 +19,18 @@ public class ShootingEnemy implements Entity {
     private int currentDirection = 1;
     private Random random = new Random();
 
-    private double initialY;
-    private double timeStep = 0.0;
-
     private int shootCooldown = 0;
     private List<Projectile> activeProjectiles = new ArrayList<>();
     
-    private boolean facingRight = true; // Gestione direzione
+    private boolean facingRight = true;
+    
+    private int damageCooldown = 0; // Timer per il cooldown del danno da contatto
 
     public ShootingEnemy(double x, double y) {
         this.width = GameStruct.TILE_SIZE;
         this.height = GameStruct.TILE_SIZE;
         this.position = new Vector2D(x, y);
-        this.initialY = y;
+        this.velocity = new Vector2D(0, 0);
     }
 
     @Override
@@ -38,8 +39,29 @@ public class ShootingEnemy implements Entity {
     }
 
     @Override
+    public Vector2D getVelocity() {
+        return velocity;
+    }
+
+    @Override
+    public boolean isGrounded() {
+        return grounded;
+    }
+
+    @Override
+    public void setGrounded(boolean grounded) {
+        this.grounded = grounded;
+    }
+
+    @Override
     public Rectangle getBoundingBox() {
-        return new Rectangle((int) position.getX(), (int) position.getY(), width, height);
+        int shrinkX = 10;
+        return new Rectangle(
+            (int) position.getX() + (shrinkX / 2), 
+            (int) position.getY(), 
+            width - shrinkX, 
+            height
+        );
     }
 
     public List<Projectile> getActiveProjectiles() {
@@ -53,9 +75,21 @@ public class ShootingEnemy implements Entity {
     public void update(Player player, ArrayList<String> map) {
         if (player == null) return;
 
-        // Danno da contatto fisico
+        // --- GESTIONE COOLDOWN DANNO DA CONTATTO ---
+        if (damageCooldown > 0) {
+            damageCooldown--;
+        }
+
         if (getBoundingBox().intersects(player.getBoundingBox())) {
-            player.takeDamage(1);
+            if (damageCooldown == 0) {
+                player.takeDamage(5); // Toglie 5 di vita
+                damageCooldown = 180; // 180 frame = circa 3 secondi di attesa prima del prossimo danno
+            }
+        }
+
+        // --- GESTIONE GRAVITÀ ---
+        if (!grounded) {
+            velocity.setY(velocity.getY() + 0.5); // Forza di gravità
         }
 
         double playerX = player.getPosition().getX();
@@ -65,26 +99,24 @@ public class ShootingEnemy implements Entity {
         double dy = playerY - position.getY();
         double distance = Math.sqrt(dx * dx + dy * dy);
 
-        timeStep += 0.05;
-
-        // Registriamo la posizione precedente per calcolare la direzione di movimento
-        double oldX = position.getX();
-
         // Se il giocatore è a distanza di tiro
         if (distance <= visionRange) {
             shootCooldown++;
-            if (shootCooldown >= 80) { 
+            if (shootCooldown >= 80) {  
                 shootCooldown = 0;
                 Projectile p = new Projectile(position.getX(), position.getY(), playerX, playerY, 5.5);
                 activeProjectiles.add(p);
             }
             
             if (dx > 5) {
-                position.setX(position.getX() + 0.5);
+                velocity.setX(speed * 1.3);
+                facingRight = true;  
             } else if (dx < -5) {
-                position.setX(position.getX() - 0.5);
+                velocity.setX(-speed * 1.3);
+                facingRight = false; 
+            } else {
+                velocity.setX(0);
             }
-            
         } else {
             wanderTimer++;
             if (wanderTimer > 180) {
@@ -94,22 +126,14 @@ public class ShootingEnemy implements Entity {
             }
             
             if (currentDirection != 0) {
-                position.setX(position.getX() + (speed * currentDirection));
+                velocity.setX(speed * 0.5 * currentDirection);
+                facingRight = (currentDirection > 0); 
+            } else {
+                velocity.setX(0);
             }
         }
 
-        // Aggiorna lo stato della direzione (facingRight) in base allo spostamento sull'asse X
-        double newX = position.getX();
-        if (newX > oldX) {
-            facingRight = true;
-        } else if (newX < oldX) {
-            facingRight = false;
-        }
-
-        // Movimento verticale fluttuante
-        double floatingEffect = Math.sin(timeStep) * 0.5;
-        position.setY(initialY + floatingEffect);
-
+        // Rimozione proiettili inattivi e aggiornamento degli stessi
         activeProjectiles.removeIf(p -> !p.isActive());
         for (Projectile p : activeProjectiles) {
             p.update(player, map);

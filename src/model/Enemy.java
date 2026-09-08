@@ -21,6 +21,8 @@ public class Enemy implements Entity {
     private int currentDirection = 1;      
     private Random random = new Random();
 
+    private int damageCooldown = 0; // Timer di cooldown
+
     public Enemy(double x, double y) {
         this.position = new Vector2D(x, y);
         this.velocity = new Vector2D(0, 0);
@@ -62,6 +64,10 @@ public class Enemy implements Entity {
     @Override
     public Rectangle getBoundingBox() {
         int shrinkX = 10;
+        return newRectangleWithShrink(shrinkX);
+    }
+
+    private Rectangle newRectangleWithShrink(int shrinkX) {
         return new Rectangle(
             (int) position.getX() + (shrinkX / 2), 
             (int) position.getY(), 
@@ -74,13 +80,22 @@ public class Enemy implements Entity {
     public void update(Player player) {
         if (player == null) return;
 
-        if (getBoundingBox().intersects(player.getBoundingBox())) {
-            player.takeDamage(1); 
+        // --- GESTIONE TIMER COOLDOWN DANNO ---
+        if (damageCooldown > 0) {
+            damageCooldown--;
         }
 
-        // Gestione gravità di base sull'asse Y
+        // Controllo collisione e applicazione danno con cooldown protetto
+        if (getBoundingBox().intersects(player.getBoundingBox())) {
+            if (damageCooldown == 0) {
+                player.takeDamage(5); // Toglie 5 HP
+                damageCooldown = 180; // 180 frame = circa 3 secondi di pausa prima del prossimo danno
+            }
+        }
+
+        // Gestione gravità sull'asse Y
         if (!grounded) {
-            velocity.setY(velocity.getY() + 0.5); // Forza di gravità
+            velocity.setY(velocity.getY() + 0.5);
         }
 
         double playerX = player.getPosition().getX();
@@ -116,5 +131,9 @@ public class Enemy implements Entity {
                 velocity.setX(0);
             }
         }
+
+        // Muove effettivamente l'entità in base alla velocità calcolata
+        position.setX(position.getX() + velocity.getX());
+        position.setY(position.getY() + velocity.getY());
     }
 }

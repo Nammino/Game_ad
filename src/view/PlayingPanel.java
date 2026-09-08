@@ -352,12 +352,8 @@ public class PlayingPanel {
                         g2.setFont(new Font("Arial", Font.BOLD, 18));
                         g2.drawString("E", ex + 10, ey + 24);
                     }
-
-                    if (player.getBoundingBox().intersects(enemy.getBoundingBox())) {
-                        player.setHealth(player.getHealth() - 1); 
-                    }
-                }
-                else if (entity instanceof ShootingEnemy shootingEnemy) {
+                
+                } else if (entity instanceof ShootingEnemy shootingEnemy) {
                     int sx = (int) Math.round(shootingEnemy.getPosition().getX());
                     int sy = (int) Math.round(shootingEnemy.getPosition().getY());
 

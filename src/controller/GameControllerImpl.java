@@ -27,10 +27,19 @@ public class GameControllerImpl extends KeyAdapter implements GameController {
         int code = e.getKeyCode();
         GameState state = panel.getCurrentState();
 
+        // Se siamo nelle impostazioni e stiamo aspettando un tasto per il rebind
+        if (state == GameState.SETTINGS) {
+            SettingsPanel settings = panel.getSettingsPanel();
+            if (settings.isWaitingForKey()) {
+                settings.handleKeyRebind(code);
+                panel.repaint();
+                return;
+            }
+        }
+
         if (state == GameState.PLAYING) {
             model.Level currentLevel = model.getCurrentWorld().getLevels().get(panel.getSelectedLevelIndex());
 
-         // AGGIUNTA: Permetti di premere 'R' in qualsiasi momento durante il gioco per riavviare subito
             if (code == KeyEvent.VK_R) {
                 currentLevel.setCompleted(false);
                 panel.restartCurrentLevel();
@@ -53,25 +62,29 @@ public class GameControllerImpl extends KeyAdapter implements GameController {
 
             Player player = model.getPlayer();
             if (player != null) {
-                switch (code) {
-                    case KeyEvent.VK_A, KeyEvent.VK_LEFT -> player.setLeft(true);
-                    case KeyEvent.VK_D, KeyEvent.VK_RIGHT -> player.setRight(true);
-                    case KeyEvent.VK_SPACE, KeyEvent.VK_W, KeyEvent.VK_UP -> player.setJumpRequested(true);
-                    
-                    // Apre l'inventario premendo 'I'
-                    case KeyEvent.VK_I -> {
-                        player.setLeft(false);
-                        player.setRight(false);
-                        panel.setCurrentState(GameState.INVENTORY);
-                        panel.repaint();
-                    }
+                SettingsPanel settings = panel.getSettingsPanel();
+                
+                // Usiamo ESCLUSIVAMENTE i tasti salvati (applied)
+                int jumpKey = settings.getAppliedJumpKey();
+                int leftKey = settings.getAppliedLeftKey();
+                int rightKey = settings.getAppliedRightKey();
 
-                    case KeyEvent.VK_ESCAPE -> {
-                        player.setLeft(false);
-                        player.setRight(false);
-                        panel.setCurrentState(GameState.PAUSE);
-                        panel.repaint();
-                    }
+                if (code == leftKey) {
+                    player.setLeft(true);
+                } else if (code == rightKey) {
+                    player.setRight(true);
+                } else if (code == jumpKey) {
+                    player.setJumpRequested(true);
+                } else if (code == KeyEvent.VK_I) { 
+                    player.setLeft(false);
+                    player.setRight(false);
+                    panel.setCurrentState(GameState.INVENTORY);
+                    panel.repaint();
+                } else if (code == KeyEvent.VK_ESCAPE) {
+                    player.setLeft(false);
+                    player.setRight(false);
+                    panel.setCurrentState(GameState.PAUSE);
+                    panel.repaint();
                 }
             }
             return;
@@ -79,11 +92,9 @@ public class GameControllerImpl extends KeyAdapter implements GameController {
 
         // Gestisce la chiusura dell'inventario con 'I' o 'ESC'
         if (state == GameState.INVENTORY) {
-            switch (code) {
-                case KeyEvent.VK_I, KeyEvent.VK_ESCAPE -> {
-                    panel.setCurrentState(GameState.PLAYING);
-                    panel.repaint();
-                }
+            if (code == KeyEvent.VK_I || code == KeyEvent.VK_ESCAPE) {
+                panel.setCurrentState(GameState.PLAYING);
+                panel.repaint();
             }
             return;
         }
@@ -96,15 +107,15 @@ public class GameControllerImpl extends KeyAdapter implements GameController {
                 case KeyEvent.VK_ENTER, KeyEvent.VK_SPACE -> {
                     int option = pause.getSelectedIndex();
                     switch (option) {
-	                    case 0 -> { 
-	                        panel.setCurrentState(GameState.PLAYING); // Continua
-	                        panel.requestFocusInWindow(); // <-- AGGIUNGI QUESTO
-	                    }
-	                    case 1 -> { 
-	                        panel.restartCurrentLevel(); 
-	                        panel.setCurrentState(GameState.PLAYING); 
-	                        panel.requestFocusInWindow(); // <-- AGGIUNGI QUESTO
-	                    }
+                        case 0 -> { 
+                            panel.setCurrentState(GameState.PLAYING);
+                            panel.requestFocusInWindow();
+                        }
+                        case 1 -> { 
+                            panel.restartCurrentLevel(); 
+                            panel.setCurrentState(GameState.PLAYING); 
+                            panel.requestFocusInWindow();
+                        }
                         case 2 -> { previousState = GameState.PAUSE; panel.setCurrentState(GameState.SETTINGS); }
                         case 3 -> panel.setCurrentState(GameState.LEVEL_SELECTION);
                     }
@@ -126,7 +137,7 @@ public class GameControllerImpl extends KeyAdapter implements GameController {
                     
                     panel.resetPlayerPosition(); 
                     panel.setCurrentState(GameState.PLAYING); 
-                    panel.requestFocusInWindow(); // <-- AGGIUNGI QUESTO
+                    panel.requestFocusInWindow();
                     panel.repaint(); 
                 }
                 case KeyEvent.VK_ESCAPE -> { panel.setCurrentState(GameState.WORLD_SELECTION); panel.repaint(); }
@@ -194,7 +205,7 @@ public class GameControllerImpl extends KeyAdapter implements GameController {
                         case 0 -> panel.setCurrentState(GameState.WORLD_SELECTION);
                         case 1 -> {
                             panel.setCurrentState(GameState.PLAYING);
-                            panel.requestFocusInWindow(); // <-- AGGIUNGI QUESTO
+                            panel.requestFocusInWindow();
                         }
                         case 2 -> { previousState = GameState.MENU; panel.setCurrentState(GameState.SETTINGS); }
                         case 3 -> System.exit(0);
@@ -211,10 +222,19 @@ public class GameControllerImpl extends KeyAdapter implements GameController {
         if (panel.getCurrentState() == GameState.PLAYING) {
             Player player = model.getPlayer();
             if (player != null) {
-                switch (code) {
-                    case KeyEvent.VK_A, KeyEvent.VK_LEFT -> player.setLeft(false);
-                    case KeyEvent.VK_D, KeyEvent.VK_RIGHT -> player.setRight(false);
-                    case KeyEvent.VK_SPACE, KeyEvent.VK_W, KeyEvent.VK_UP -> player.setJumpRequested(false);
+                SettingsPanel settings = panel.getSettingsPanel();
+                
+                // Rilascio basato esclusivamente sui tasti applicati
+                int leftKey = settings.getAppliedLeftKey();
+                int rightKey = settings.getAppliedRightKey();
+                int jumpKey = settings.getAppliedJumpKey();
+
+                if (code == leftKey) {
+                    player.setLeft(false);
+                } else if (code == rightKey) {
+                    player.setRight(false);
+                } else if (code == jumpKey) {
+                    player.setJumpRequested(false);
                 }
             }
         }
