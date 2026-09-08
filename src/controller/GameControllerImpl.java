@@ -35,6 +35,11 @@ public class GameControllerImpl extends KeyAdapter implements GameController {
                     panel.resetPlayerPosition();
                     panel.setCurrentState(GameState.LEVEL_SELECTION);
                     panel.repaint();
+                } else if (code == KeyEvent.VK_R) {
+                    // Riavvia il livello corrente e rimuove lo stato di completamento
+                    currentLevel.setCompleted(false);
+                    panel.restartCurrentLevel();
+                    panel.repaint();
                 }
                 return; 
             }

@@ -173,22 +173,27 @@ public class PlayingPanel {
 
             // 3. Goal e Nemici
             for (Entity entity : level.getEntities()) {
-                if (entity instanceof Goal goal) {
-                    int gx = (int) Math.round(goal.getPosition().getX());
-                    int gy = (int) Math.round(goal.getPosition().getY());
+            	if (entity instanceof Goal goal) {
+            	    int gx = (int) Math.round(goal.getPosition().getX());
+            	    int gy = (int) Math.round(goal.getPosition().getY());
 
-                    g2.setColor(new Color(0, 200, 100));
-                    g2.fillRect(gx, gy, tileSize, tileSize);
-                    g2.setColor(Color.WHITE);
-                    g2.setFont(new Font("Arial", Font.BOLD, 18));
-                    g2.drawString("D", gx + 11, gy + 24);
-                    g2.setColor(Color.BLACK);
-                    g2.drawRect(gx, gy, tileSize, tileSize);
+            	    g2.setColor(new Color(0, 200, 100));
+            	    g2.fillRect(gx, gy, tileSize, tileSize);
+            	    g2.setColor(Color.WHITE);
+            	    g2.setFont(new Font("Arial", Font.BOLD, 18));
+            	    g2.drawString("D", gx + 11, gy + 24);
+            	    g2.setColor(Color.BLACK);
+            	    g2.drawRect(gx, gy, tileSize, tileSize);
 
-                    if (player.getBoundingBox().intersects(goal.getBoundingBox())) {
-                        level.setCompleted(true);
-                    }
-                }
+            	    if (player.getBoundingBox().intersects(goal.getBoundingBox())) {
+            	        level.setCompleted(true);
+            	        
+            	        // AGGIUNGI QUESTO BLOCCO: Svuota l'inventario al completamento del livello
+            	        if (model.getPlayer() != null && model.getPlayer().getInventory() != null) {
+            	            model.getPlayer().getInventory().clear();
+            	        }
+            	    }
+            	}
                 else if (entity instanceof Enemy enemy) {
                     int ex = (int) Math.round(enemy.getPosition().getX());
                     int ey = (int) Math.round(enemy.getPosition().getY());
@@ -392,7 +397,7 @@ public class PlayingPanel {
             g2.drawString("" + (i + 1), currentX + 4, miniInvY + 12);
         }
 
-        // --- SCHERMATA DI VITTORIA ---
+     // --- SCHERMATA DI VITTORIA ---
         if (level.isCompleted()) {
             g2.setColor(new Color(0, 0, 0, 150));
             g2.fillRect(0, 0, panelWidth, panelHeight);
@@ -401,13 +406,18 @@ public class PlayingPanel {
             g2.setFont(new Font("Arial", Font.BOLD, 36));
             String msg = "LIVELLO COMPLETATO!";
             int msgWidth = g2.getFontMetrics().stringWidth(msg);
-            g2.drawString(msg, (panelWidth - msgWidth) / 2, panelHeight / 2 - 20);
+            g2.drawString(msg, (panelWidth - msgWidth) / 2, panelHeight / 2 - 40);
 
             g2.setColor(Color.WHITE);
             g2.setFont(new Font("Arial", Font.PLAIN, 18));
-            String subMsg = "Premi INVIO per tornare alla selezione livelli";
-            int subWidth = g2.getFontMetrics().stringWidth(subMsg);
-            g2.drawString(subMsg, (panelWidth - subWidth) / 2, panelHeight / 2 + 25);
+            
+            String subMsg1 = "Premi INVIO per tornare alla selezione livelli";
+            int subWidth1 = g2.getFontMetrics().stringWidth(subMsg1);
+            g2.drawString(subMsg1, (panelWidth - subWidth1) / 2, panelHeight / 2 + 10);
+
+            String subMsg2 = "Premi R per rigiocare il livello";
+            int subWidth2 = g2.getFontMetrics().stringWidth(subMsg2);
+            g2.drawString(subMsg2, (panelWidth - subWidth2) / 2, panelHeight / 2 + 45);
         }
     }
 }

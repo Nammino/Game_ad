@@ -267,9 +267,10 @@ public class GamePanel extends JPanel {
         if (model != null && model.getCurrentWorld() != null && !model.getCurrentWorld().getLevels().isEmpty()) {
             Level currentLevel = model.getCurrentWorld().getLevels().get(selectedLevelIndex);
             currentLevel.resetLevel(); 
-            
+
             if (model.getPlayer() != null && model.getPlayer().getInventory() != null) {
-                model.getPlayer().getInventory().getCollectedItems().clear();
+                // Svuota completamente l'inventario (oggetti e istanze)
+                model.getPlayer().getInventory().clear();
             }
             resetPlayerPosition();
         }
