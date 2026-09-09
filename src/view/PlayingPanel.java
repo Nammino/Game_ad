@@ -151,6 +151,12 @@ public class PlayingPanel {
             }
         }
 
+        int triggerY = cameraY + panelHeight + 50; 
+        if (player.getPosition().getY() > triggerY) {
+            panel.restartCurrentLevel();
+            return;
+        }
+
         g2.translate(-cameraX, -cameraY);
 
         List<model.ItemInstance> allItems = player.getInventory().getItems();
@@ -383,14 +389,14 @@ public class PlayingPanel {
                     }
 
                     for (Projectile p : shootingEnemy.getActiveProjectiles()) {
-                        int px = (int) Math.round(p.getPosition().getX());
-                        int py = (int) Math.round(p.getPosition().getY());
+                        int prx = (int) Math.round(p.getPosition().getX());
+                        int pry = (int) Math.round(p.getPosition().getY());
                         
                         if (rockImg != null) {
-                            g2.drawImage(rockImg, px, py, 12, 12, null);
+                            g2.drawImage(rockImg, prx, pry, 12, 12, null);
                         } else {
                             g2.setColor(Color.YELLOW);
-                            g2.fillOval(px, py, 12, 12);
+                            g2.fillOval(prx, pry, 12, 12);
                         }
                     }
                 }
@@ -567,9 +573,12 @@ public class PlayingPanel {
                 }
             }
             
-            g2.setColor(Color.WHITE);
-            g2.setFont(new Font("Arial", Font.BOLD, 10));
-            g2.drawString("" + (i + 1), currentX + 4, miniInvY + 12);
+            // Stampiamo il numero solo per i primi 4 slot
+            if (i < 4) {
+                g2.setColor(Color.WHITE);
+                g2.setFont(new Font("Arial", Font.BOLD, 10));
+                g2.drawString("" + (i + 1), currentX + 4, miniInvY + 12);
+            }
         }
 
         if (level.isCompleted()) {

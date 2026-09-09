@@ -196,9 +196,12 @@ public class InventoryPanel {
                 }
             }
 
-            g2.setColor(Color.LIGHT_GRAY);
-            g2.setFont(new Font("Arial", Font.BOLD, 11));
-            g2.drawString("" + (i + 1), currentX + 4, hotbarY + 12);
+            // Stampiamo il numero solo per i primi 4 slot
+            if (i < 4) {
+                g2.setColor(Color.LIGHT_GRAY);
+                g2.setFont(new Font("Arial", Font.BOLD, 11));
+                g2.drawString("" + (i + 1), currentX + 4, hotbarY + 12);
+            }
         }
 
         g2.setColor(Color.LIGHT_GRAY);
