@@ -36,7 +36,7 @@ public class EntityPlacerImpl implements EntityPlacer {
                         case 'W' -> entities.add(new Collectible(x, y, "SWORD"));  
                         case 'B' -> entities.add(new Collectible(x, y, "GUN"));    
                         case 'M' -> entities.add(new Collectible(x, y, "COIN"));   
-                        case 'T', 'N' -> entities.add(new NeutralObject(x, y, "TREE")); 
+                        case 'T' -> entities.add(new NeutralObject(x, y, "TREE")); 
                         case 'R' -> entities.add(new NeutralObject(x, y, "ROCK")); 
                         case 'U' -> entities.add(new NeutralObject(x, y, "BUSH")); 
                     }
