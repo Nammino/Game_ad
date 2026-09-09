@@ -237,8 +237,19 @@ public class GameControllerImpl extends KeyAdapter implements GameController {
     }
 
     @Override
-    public void startGame() {}
+    public void initController() {
+        this.panel.addKeyListener(this);
+        this.panel.setFocusable(true);
+    }
 
     @Override
-    public void stopGame() {}
+    public void startGame() {
+        this.panel.setCurrentState(GameState.MENU);
+        this.panel.repaint();
+    }
+
+    @Override
+    public void stopGame() {
+        this.panel.removeKeyListener(this);
+    }
 }
