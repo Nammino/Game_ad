@@ -16,7 +16,7 @@ import javax.swing.SwingUtilities;
 
 public class SettingsPanel {
 
-    private final String[] tabs = {"Audio", "Grafica", "Controlli"};
+    private final String[] tabs = {"Grafica", "Controlli"};
     private int selectedTab = 0;
 
     private int activeFocusArea = 1;
@@ -30,8 +30,6 @@ public class SettingsPanel {
     private final Rectangle applyButtonBounds = new Rectangle();
     private final Rectangle backButtonBounds = new Rectangle();
 
-    private int tempMusicVol = 80, tempSfxVol = 100;
-    private boolean tempMuted = false;
     private int tempResIdx = 0, tempFpsIdx = 1;
     private boolean tempFullScreen = false, tempVSync = true;
 
@@ -39,8 +37,6 @@ public class SettingsPanel {
     private int tempLeftKey = KeyEvent.VK_LEFT;
     private int tempRightKey = KeyEvent.VK_RIGHT;
 
-    private int appliedMusicVol = 80, appliedSfxVol = 100;
-    private boolean appliedMuted = false;
     private int appliedResIdx = 0, appliedFpsIdx = 1;
     private boolean appliedFullScreen = false, appliedVSync = true;
     
@@ -149,11 +145,6 @@ public class SettingsPanel {
 
         switch (selectedTab) {
             case 0 -> {
-                if (selectedOptionIndex == 0) tempMusicVol = Math.min(100, Math.max(0, tempMusicVol + (direction * 10)));
-                else if (selectedOptionIndex == 1) tempSfxVol = Math.min(100, Math.max(0, tempSfxVol + (direction * 10)));
-                else if (selectedOptionIndex == 2) tempMuted = !tempMuted;
-            }
-            case 1 -> {
                 if (selectedOptionIndex == 0) {
                     if (!tempFullScreen) {
                         tempResIdx = (tempResIdx + direction + resolutions.length) % resolutions.length;
@@ -168,7 +159,7 @@ public class SettingsPanel {
                 }
                 else if (selectedOptionIndex == 3) tempVSync = !tempVSync;
             }
-            case 2 -> {
+            case 1 -> {
                 if (selectedOptionIndex >= 0 && selectedOptionIndex <= 2) {
                     waitingForKey = true;
                     controlIndexToRebind = selectedOptionIndex;
@@ -188,11 +179,6 @@ public class SettingsPanel {
 
         switch (selectedTab) {
             case 0 -> {
-                appliedMusicVol = tempMusicVol;
-                appliedSfxVol = tempSfxVol;
-                appliedMuted = tempMuted;
-            }
-            case 1 -> {
                 boolean isFullScreenChanged = (appliedFullScreen != tempFullScreen);
                 appliedResIdx = tempResIdx;
                 appliedFpsIdx = tempFpsIdx;
@@ -209,7 +195,7 @@ public class SettingsPanel {
                     }
                 }
             }
-            case 2 -> {
+            case 1 -> {
                 appliedJumpKey = tempJumpKey;
                 appliedLeftKey = tempLeftKey;
                 appliedRightKey = tempRightKey;
@@ -221,9 +207,8 @@ public class SettingsPanel {
 
     private int getCurrentOptionsCount() {
         return switch (selectedTab) {
-            case 0 -> 3; 
-            case 1 -> 4; 
-            case 2 -> 5; 
+            case 0 -> 4; // Grafica
+            case 1 -> 5; // Controlli
             default -> 0;
         };
     }
@@ -274,16 +259,10 @@ public class SettingsPanel {
                 selectedOptionIndex = i;
                 activeFocusArea = 1;
 
-                if (selectedTab == 0 && (i == 0 || i == 1)) {
-                    Rectangle rect = optionBounds[i];
-                    double clickX = mousePoint.getX() - rect.getX();
-                    int newVol = Math.min(100, Math.max(0, (int) ((clickX / rect.getWidth()) * 100)));
-                    if (i == 0) tempMusicVol = newVol;
-                    else tempSfxVol = newVol;
-                } else if (selectedTab == 2 && i >= 3) {
+                if (selectedTab == 1 && i >= 3) {
                     return true;
                 } else {
-                    if (!(selectedTab == 1 && i == 0 && tempFullScreen)) {
+                    if (!(selectedTab == 0 && i == 0 && tempFullScreen)) {
                         navigateHorizontal(1);
                     }
                 }
@@ -298,22 +277,7 @@ public class SettingsPanel {
     }
 
     public void handleMouseDrag(Point mousePoint) {
-        if (selectedTab != 0 || waitingForKey) return;
-
-        for (int i = 0; i <= 1; i++) {
-            Rectangle rect = optionBounds[i];
-            if (mousePoint.getY() >= rect.getY() - 10 && mousePoint.getY() <= rect.getY() + rect.getHeight() + 10) {
-                selectedOptionIndex = i;
-                activeFocusArea = 1;
-
-                double clickX = mousePoint.getX() - rect.getX();
-                int newVol = Math.min(100, Math.max(0, (int) ((clickX / rect.getWidth()) * 100)));
-
-                if (i == 0) tempMusicVol = newVol;
-                else tempSfxVol = newVol;
-                return;
-            }
-        }
+        // Rimosso il trascinamento delle barre audio
     }
 
     public void draw(Graphics2D g2, GamePanel panel) {
@@ -367,7 +331,6 @@ public class SettingsPanel {
 
         g2.setFont(new Font("Arial", Font.PLAIN, 14));
         g2.setColor(Color.LIGHT_GRAY);
-        
     }
 
     private void drawTabContent(Graphics2D g2, int panelWidth) {
@@ -375,63 +338,44 @@ public class SettingsPanel {
         FontMetrics metrics = g2.getFontMetrics();
         int startY = 170;
 
-        if (selectedTab == 0) {
-            drawVolumeBar(g2, "Volume Musica", tempMusicVol, 0, startY, panelWidth);
-            drawVolumeBar(g2, "Volume Effetti", tempSfxVol, 1, startY + 55, panelWidth);
-
-            String muteText = "Mute Audio: " + (tempMuted ? "[SI]" : "[NO]");
-            int textWidth = metrics.stringWidth(muteText);
-            int x = (panelWidth - textWidth) / 2;
-            int y = startY + 110;
-            optionBounds[2].setBounds(x, y - metrics.getAscent(), textWidth, metrics.getHeight());
-
-            if (selectedOptionIndex == 2 && activeFocusArea == 1) {
-                g2.setColor(Color.RED);
-                g2.drawString("> " + muteText + " <", x - 30, y);
-            } else {
-                g2.setColor(Color.WHITE);
-                g2.drawString(muteText, x, y);
-            }
-        } else {
-            String resLabel = tempFullScreen ? "Risoluzione: 1920x1080 (Bloccata)" : "Risoluzione: < " + resolutions[tempResIdx] + " >";
-            
-            String[] labels = switch (selectedTab) {
-                case 1 -> new String[]{
-                    resLabel,
-                    "Limite FPS: < " + fpsLimits[tempFpsIdx] + " >",
-                    "Schermo Intero: " + (tempFullScreen ? "[ATTIVO]" : "[DISATTIVO]"),
-                    "V-Sync: " + (tempVSync ? "[ATTIVO]" : "[DISATTIVO]")
-                };
-                case 2 -> new String[]{
-                    "Salto: " + KeyEvent.getKeyText(tempJumpKey),
-                    "Muovi a Sinistra: " + KeyEvent.getKeyText(tempLeftKey),
-                    "Muovi a Destra: " + KeyEvent.getKeyText(tempRightKey),
-                    "Uso oggetto: Click Sinistro Mouse",
-                    "Apri/Chiudi Inventario: Tasto I"
-                };
-                default -> new String[0];
+        String resLabel = tempFullScreen ? "Risoluzione: 1920x1080 (Bloccata)" : "Risoluzione: < " + resolutions[tempResIdx] + " >";
+        
+        String[] labels = switch (selectedTab) {
+            case 0 -> new String[]{
+                resLabel,
+                "Limite FPS: < " + fpsLimits[tempFpsIdx] + " >",
+                "Schermo Intero: " + (tempFullScreen ? "[ATTIVO]" : "[DISATTIVO]"),
+                "V-Sync: " + (tempVSync ? "[ATTIVO]" : "[DISATTIVO]")
             };
+            case 1 -> new String[]{
+                "Salto: " + KeyEvent.getKeyText(tempJumpKey),
+                "Muovi a Sinistra: " + KeyEvent.getKeyText(tempLeftKey),
+                "Muovi a Destra: " + KeyEvent.getKeyText(tempRightKey),
+                "Uso oggetto: Click Sinistro Mouse",
+                "Apri/Chiudi Inventario: Tasto I"
+            };
+            default -> new String[0];
+        };
 
-            for (int i = 0; i < labels.length; i++) {
-                int textWidth = metrics.stringWidth(labels[i]);
-                int x = (panelWidth - textWidth) / 2;
-                int y = startY + (i * 40);
+        for (int i = 0; i < labels.length; i++) {
+            int textWidth = metrics.stringWidth(labels[i]);
+            int x = (panelWidth - textWidth) / 2;
+            int y = startY + (i * 40);
 
-                optionBounds[i].setBounds(x, y - metrics.getAscent(), textWidth, metrics.getHeight());
+            optionBounds[i].setBounds(x, y - metrics.getAscent(), textWidth, metrics.getHeight());
 
-                boolean isCurrent = (i == selectedOptionIndex && activeFocusArea == 1);
-                if (isCurrent) {
-                    if (selectedTab == 1 && i == 0 && tempFullScreen) {
-                        g2.setColor(Color.DARK_GRAY);
-                        g2.drawString(labels[i], x, y);
-                    } else {
-                        g2.setColor(waitingForKey && controlIndexToRebind == i ? Color.ORANGE : Color.RED);
-                        g2.drawString("> " + labels[i] + " <", x - 30, y);
-                    }
-                } else {
-                    g2.setColor((selectedTab == 1 && i == 0 && tempFullScreen) ? Color.DARK_GRAY : Color.WHITE);
+            boolean isCurrent = (i == selectedOptionIndex && activeFocusArea == 1);
+            if (isCurrent) {
+                if (selectedTab == 0 && i == 0 && tempFullScreen) {
+                    g2.setColor(Color.DARK_GRAY);
                     g2.drawString(labels[i], x, y);
+                } else {
+                    g2.setColor(waitingForKey && controlIndexToRebind == i ? Color.ORANGE : Color.RED);
+                    g2.drawString("> " + labels[i] + " <", x - 30, y);
                 }
+            } else {
+                g2.setColor((selectedTab == 0 && i == 0 && tempFullScreen) ? Color.DARK_GRAY : Color.WHITE);
+                g2.drawString(labels[i], x, y);
             }
         }
 
@@ -450,31 +394,6 @@ public class SettingsPanel {
             g2.setColor(Color.ORANGE);
             g2.drawString(applyText, applyX, applyY);
         }
-    }
-
-    private void drawVolumeBar(Graphics2D g2, String label, int value, int optionIdx, int y, int panelWidth) {
-        g2.setFont(new Font("Arial", Font.BOLD, 18));
-        g2.setColor(Color.WHITE);
-
-        String title = label + ": " + value + "%";
-        g2.drawString(title, (panelWidth / 2) - 150, y);
-
-        int barWidth = 300;
-        int barHeight = 16;
-        int barX = (panelWidth - barWidth) / 2;
-        int barY = y + 8;
-
-        optionBounds[optionIdx].setBounds(barX, barY, barWidth, barHeight);
-
-        g2.setColor(Color.DARK_GRAY);
-        g2.fillRect(barX, barY, barWidth, barHeight);
-
-        int fillWidth = (int) (barWidth * (value / 100.0));
-        g2.setColor((optionIdx == selectedOptionIndex && activeFocusArea == 1) ? Color.RED : Color.CYAN);
-        g2.fillRect(barX, barY, fillWidth, barHeight);
-
-        g2.setColor(Color.WHITE);
-        g2.drawRect(barX, barY, barWidth, barHeight);
     }
 
     private int getCenteredX(Graphics2D g2, String text, int panelWidth) {
