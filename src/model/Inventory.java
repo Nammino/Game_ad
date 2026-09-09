@@ -34,7 +34,6 @@ public class Inventory {
         return items;
     }
 
-    // Mantenuto per compatibilità se serve altrove
     public List<String> getCollectedItems() {
         List<String> simpleList = new ArrayList<>();
         for (ItemInstance item : items) {

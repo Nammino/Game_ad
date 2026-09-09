@@ -38,7 +38,6 @@ public class LevelImpl implements Level {
                 File mapFile = null;
                 File objectsFile = null;
 
-                // Cerca i file all'interno della cartella del livello
                 File[] files = levelFolder.listFiles((dir, name) -> name.toLowerCase().endsWith(".txt"));
                 if (files != null) {
                     for (File f : files) {
@@ -46,23 +45,21 @@ public class LevelImpl implements Level {
                         if (name.contains("object")) {
                             objectsFile = f;
                         } else {
-                            mapFile = f; // Il file principale della mappa (es. level.txt o map.txt)
+                            mapFile = f; 
                         }
                     }
                 }
 
-                // 1. Carica la mappa
                 if (mapFile != null && mapFile.exists()) {
                     LevelBuilder builder = new LevelBuilderImpl();
                     this.map = builder.build(mapFile.getPath());
                 }
 
-                // 2. Carica gli oggetti/entità
                 if (objectsFile != null && objectsFile.exists()) {
                     EntityPlacer placer = new EntityPlacerImpl();
                     this.entities = placer.place(objectsFile.getPath());
                 } else {
-                    this.entities = new ArrayList<>(); // Nessun oggetto trovato
+                    this.entities = new ArrayList<>(); 
                 }
             }
         }
@@ -94,7 +91,6 @@ public class LevelImpl implements Level {
         if (this.entities != null) {
             this.entities.clear();
         }
-        // Richiama il build per rileggere i file e ricreare le entità/oggetti da zero
         build();
     }
 }

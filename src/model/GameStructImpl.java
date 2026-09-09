@@ -19,7 +19,6 @@ public class GameStructImpl implements GameStruct {
     private ArrayList<World> worlds;
     private int currentWorldIndex;
     
-    // File in cui memorizziamo i livelli completati
     private static final String PROGRESS_FILE = "worlds/progress.txt";
 
     public GameStructImpl() {
@@ -30,7 +29,7 @@ public class GameStructImpl implements GameStruct {
         this.currentWorldIndex = 0;
         
         loadWorlds("worlds");
-        loadProgress(); // Carica i progressi salvati all'avvio
+        loadProgress(); 
     }
 
     @Override
@@ -53,10 +52,8 @@ public class GameStructImpl implements GameStruct {
                 for (File folder : worldFolders) {
                     String folderName = folder.getName();
                     
-                    // Pulisce il nome rimuovendo prefissi numerici (es. "01_") e sostituendo "_" con spazi
                     String formattedName = folderName.replaceAll("^\\d+_", "").replace("_", " ");
                     
-                    // Rende la prima lettera maiuscola usando le stringhe (evita conflitti con model.Character)
                     if (!formattedName.isEmpty()) {
                         formattedName = formattedName.substring(0, 1).toUpperCase() + formattedName.substring(1);
                     }
@@ -144,7 +141,6 @@ public class GameStructImpl implements GameStruct {
             System.err.println("Errore durante la lettura dei progressi: " + e.getMessage());
         }
 
-        // Applica lo stato completato ai livelli corrispondenti
         for (World world : worlds) {
             if (world.getLevels() != null) {
                 for (Level level : world.getLevels()) {

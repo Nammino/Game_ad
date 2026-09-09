@@ -207,8 +207,8 @@ public class SettingsPanel {
 
     private int getCurrentOptionsCount() {
         return switch (selectedTab) {
-            case 0 -> 4; // Grafica
-            case 1 -> 5; // Controlli
+            case 0 -> 4; 
+            case 1 -> 5; 
             default -> 0;
         };
     }
@@ -277,7 +277,6 @@ public class SettingsPanel {
     }
 
     public void handleMouseDrag(Point mousePoint) {
-        // Rimosso il trascinamento delle barre audio
     }
 
     public void draw(Graphics2D g2, GamePanel panel) {

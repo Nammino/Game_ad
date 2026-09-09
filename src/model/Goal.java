@@ -26,7 +26,6 @@ public class Goal implements Entity {
 
     @Override
     public void update(Player player) {
-        // I traguardi sono immobili, non fanno nulla
     }
 
     @Override
@@ -40,7 +39,5 @@ public class Goal implements Entity {
     }
 
     @Override
-    public void setGrounded(boolean grounded) {
-        // Non soggetto a gravità
-    }
+    public void setGrounded(boolean grounded) {}
 }

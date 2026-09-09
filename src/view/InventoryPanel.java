@@ -196,7 +196,6 @@ public class InventoryPanel {
                 }
             }
 
-            // Stampiamo il numero solo per i primi 4 slot
             if (i < 4) {
                 g2.setColor(Color.LIGHT_GRAY);
                 g2.setFont(new Font("Arial", Font.BOLD, 11));
