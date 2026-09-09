@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
+import java.io.File;
 import model.GameStruct;
 import model.Level;
 import model.World;
@@ -26,16 +27,37 @@ public class LevelSelectionPanel {
             g2.setColor(Color.CYAN);
             g2.drawString(levelHeader, getCenteredX(g2, levelHeader, panel.getWidth()), 260);
 
-            String levelFile = "Mappa: " + selectedLevel.getPath();
-            g2.setFont(new Font("Arial", Font.PLAIN, 22));
+            // --- ESTRAZIONE AUTOMATICA DEL NOME DAL FILE TXT ---
+            File f = new File(selectedLevel.getPath());
+            String rawName = f.getName().replaceFirst("\\.txt$", "");
+            String levelTitle = rawName.replaceAll("^\\d+_", "").replace("_", " ");
+            if (!levelTitle.isEmpty()) {
+                levelTitle = levelTitle.substring(0, 1).toUpperCase() + levelTitle.substring(1);
+            }
+            // --------------------------------------------------
+
+            g2.setFont(new Font("Arial", Font.ITALIC, 20));
             g2.setColor(Color.LIGHT_GRAY);
-            g2.drawString(levelFile, getCenteredX(g2, levelFile, panel.getWidth()), 320);
+
+            // Calcola la larghezza della stringa per centrarla orizzontalmente sullo schermo
+            int titleWidth = g2.getFontMetrics().stringWidth(levelTitle);
+            int titleX = (panel.getWidth() - titleWidth) / 2;
+            int titleY = 310; // Posizionato subito sotto la scritta azzurra del livello
+
+            // Disegna il titolo del livello
+            g2.drawString(levelTitle, titleX, titleY);
+
+            // --- MOSTRA SE IL LIVELLO È STATO COMPLETATO ---
+            if (selectedLevel.isCompleted()) {
+                g2.setFont(new Font("Arial", Font.BOLD, 20));
+                g2.setColor(new Color(0, 255, 120));
+                String completedMsg = "[ COMPLETATO ]";
+                g2.drawString(completedMsg, getCenteredX(g2, completedMsg, panel.getWidth()), 360);
+            }
         }
 
         g2.setFont(new Font("Arial", Font.PLAIN, 18));
         g2.setColor(Color.GRAY);
-        String hint = "Usa SX/DX per scegliere | INVIO per GIOCARE | ESC indietro";
-        g2.drawString(hint, getCenteredX(g2, hint, panel.getWidth()), 500);
     }
 
     private int getCenteredX(Graphics2D g2, String text, int panelWidth) {

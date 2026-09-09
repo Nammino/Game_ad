@@ -367,8 +367,7 @@ public class SettingsPanel {
 
         g2.setFont(new Font("Arial", Font.PLAIN, 14));
         g2.setColor(Color.LIGHT_GRAY);
-        String hint = waitingForKey ? "PREMI UN TASTO SULLA TASTIERA..." : "TAB per Schede | FRECCE per muoverti | ENTER/CLICK per applicare o modificare";
-        g2.drawString(hint, getCenteredX(g2, hint, panelWidth), panelHeight - 40);
+        
     }
 
     private void drawTabContent(Graphics2D g2, int panelWidth) {

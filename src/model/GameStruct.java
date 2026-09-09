@@ -14,4 +14,5 @@ public interface GameStruct {
     ArrayList<World> getWorlds(); 
     LevelBuilder getBuilder();
     EntityPlacer getEntityPlacer();
+    void saveProgress();
 }

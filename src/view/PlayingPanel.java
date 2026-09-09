@@ -339,7 +339,11 @@ public class PlayingPanel {
                     );
 
                     if (player.getBoundingBox().intersects(centerGoalBox)) {
-                        level.setCompleted(true);
+                        if (!level.isCompleted()) {
+                            level.setCompleted(true);
+                            model.saveProgress();
+                        }
+                        
                         if (model.getPlayer() != null && model.getPlayer().getInventory() != null) {
                             model.getPlayer().getInventory().clear();
                         }
@@ -491,10 +495,6 @@ public class PlayingPanel {
         }
 
         g2.translate(cameraX, cameraY);
-
-        g2.setColor(Color.WHITE);
-        g2.setFont(new Font("Arial", Font.BOLD, 14));
-        g2.drawString("A/D: Muovi | SPAZIO: Salta | Rotella: Seleziona Slot | Click SX: Usa Oggetto", 20, 25);
 
         int barX = 20;
         int barY = 35;

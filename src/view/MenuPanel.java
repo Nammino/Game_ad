@@ -39,8 +39,7 @@ public class MenuPanel {
 
         g2.setFont(new Font("Arial", Font.PLAIN, 14));
         g2.setColor(Color.GRAY);
-        String hint = "Usa le FRECCE per spostarsi e PREMI ENTER per selezionare";
-        g2.drawString(hint, getCenteredX(g2, hint, panel.getWidth()), 530);
+        
     }
 
     private int getCenteredX(Graphics2D g2, String text, int panelWidth) {
