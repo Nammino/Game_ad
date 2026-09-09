@@ -1,0 +1,147 @@
+package model;
+
+import java.awt.Rectangle;
+import java.util.ArrayList;
+
+public class Player implements Entity {
+    private Vector2D position;
+    private Vector2D velocity;
+    private int width;
+    private int height;
+    private int health;
+    private int maxHealth;
+    private Inventory inventory;
+    
+    private boolean grounded = false;
+    private boolean left = false;
+    private boolean right = false;
+    private boolean jumpRequested = false;
+    private boolean facingRight = true;
+
+    public Player() {
+        this(100, 100); 
+    }
+
+    public Player(double x, double y) {
+        this.width = GameStruct.TILE_SIZE;
+        this.height = GameStruct.TILE_SIZE;
+        this.position = new Vector2D(x, y);
+        this.velocity = new Vector2D(0, 0);
+        this.maxHealth = 100;
+        this.health = 100;
+        this.inventory = new Inventory();
+    }
+
+    @Override
+    public Vector2D getPosition() {
+        return position;
+    }
+
+    @Override
+    public Rectangle getBoundingBox() {
+        return new Rectangle((int) position.getX(), (int) position.getY(), width, height);
+    }
+
+    public Vector2D getVelocity() {
+        return velocity;
+    }
+
+    public int getHealth() {
+        return health;
+    }
+
+    public void setHealth(int health) {
+        this.health = Math.max(0, Math.min(health, maxHealth));
+    }
+
+    public void takeDamage(int amount) {
+        this.health = Math.max(0, this.health - amount);
+    }
+    
+    public void resetHealth() {
+        this.health = maxHealth;
+    }
+
+    public int getMaxHealth() {
+        return maxHealth;
+    }
+
+    public Inventory getInventory() {
+        return inventory;
+    }
+
+    public boolean isFacingRight() {
+        return facingRight;
+    }
+
+    public void setFacingRight(boolean facingRight) {
+        this.facingRight = facingRight;
+    }
+
+    public boolean isGrounded() {
+        return grounded;
+    }
+
+    public void setGrounded(boolean grounded) {
+        this.grounded = grounded;
+    }
+
+    public boolean isLeft() {
+        return left;
+    }
+
+    public void setLeft(boolean left) {
+        this.left = left;
+        if (left) {
+            this.facingRight = false; 
+        }
+    }
+
+    public boolean isRight() {
+        return right;
+    }
+
+    public void setRight(boolean right) {
+        this.right = right;
+        if (right) {
+            this.facingRight = true; 
+        }
+    }
+
+    public boolean isJumpRequested() {
+        return jumpRequested;
+    }
+
+    public void setJumpRequested(boolean jumpRequested) {
+        this.jumpRequested = jumpRequested;
+    }
+
+    @Override
+    public void update(Player player) {
+    }
+    
+    public void update(ArrayList<String> map) {
+        double gravity = 0.5;
+        double moveSpeed = 4.0;
+        double jumpStrength = -11;
+
+        double vx = 0;
+        if (left) {
+            vx = -moveSpeed;
+        }
+        if (right) {
+            vx = moveSpeed;
+        }
+        velocity.setX(vx);
+
+        if (jumpRequested && grounded) {
+            velocity.setY(jumpStrength);
+            grounded = false;
+            jumpRequested = false;
+        }
+
+        if (!grounded) {
+            velocity.setY(velocity.getY() + gravity);
+        }
+    }
+}
