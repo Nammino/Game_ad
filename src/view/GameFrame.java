@@ -10,7 +10,7 @@ public class GameFrame extends JFrame {
     public GameFrame() {
         this.gamePanel = new GamePanel();
         
-        this.setTitle("Hello Kitty Game");
+        this.setTitle("Adventure Boy");
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setResizable(false);
         this.add(gamePanel);
@@ -21,7 +21,7 @@ public class GameFrame extends JFrame {
     public GameFrame(GamePanel panel) {
         this.gamePanel = panel;
         
-        this.setTitle("Hello Kitty Game");
+        this.setTitle("Adventure Boy");
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setResizable(false);
         this.add(gamePanel);
